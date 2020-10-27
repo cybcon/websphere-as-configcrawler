@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 51 $
-#  $LastChangedDate: 2015-03-16 14:38:51 +0100 (Mon, 16 Mar 2015) $
+#  $Revision: 54 $
+#  $LastChangedDate: 2015-11-19 17:18:36 +0100 (Thu, 19 Nov 2015) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 51 2015-03-16 13:38:51Z cybcon89 $
+#  $Id: config_crawler.py 54 2015-11-19 16:18:36Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.621";
+VERSION="0.630";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -117,7 +117,7 @@ def get_configuration(configfile):
   configAttributes = {};
   configAttributes['general'] = ['services', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'application', 'LogPasswords', 'output_format'];
   configAttributes['services'] = ['serviceProviders', 'policySets'];
-  configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
+  configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus', 'UsersAndGroups' ];
   configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions', 'MapRolesToUsers', 'MapRunAsRolesToUsers', 'MapResRefToEJB', 'MapEJBRefToEJB', 'MapJaspiProvider', 'MapModulesToServers', 'MetadataCompleteForModules', 'ModuleBuildID', 'CtxRootForWebMod', 'MapInitParamForServlet', 'MapWebModToVH'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
@@ -144,7 +144,7 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.030";
+  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.032";
 
 # give configuration object back
   return configHash;
@@ -588,6 +588,133 @@ def get_JMSProviderProperties(objectID):
       else:
         dataOut({'value': "No WebSphere MQ queue destination defined on this scope."});
     dataOut({'tagname': "mqqueues", 'tagtype': "2"});
+
+    dataOut({'description': "WebSphere MQ Topic connection factories", 'tagname': 'mqtopicconnectionfactories', 'tagtype': "1"});
+    for MQTCF in AdminConfig.list('MQTopicConnectionFactory', JMSProviderID).split(lineSeparator):
+      if MQTCF != "":
+        dataOut({'tagname': "mqtopicconnectionfactory", 'tagtype': "1"});
+        dataOut({'name': 'name', 'value': cybcon_was.showAttribute(MQTCF, 'name'), 'description': 'Name', 'tagname': 'name'});
+        dataOut({'name': 'jndiName', 'value': cybcon_was.showAttribute(MQTCF, 'jndiName'), 'description': 'JNDI name', 'tagname': 'jndiName'});
+        dataOut({'name': 'queueManager', 'value': cybcon_was.showAttribute(MQTCF, 'queueManager'), 'description': 'Queue manager', 'tagname': 'queueManager'});
+        dataOut({'name': 'transportType', 'value': cybcon_was.showAttribute(MQTCF, 'transportType'), 'description': 'Transport', 'tagname': 'transportType'});
+        dataOut({'name': 'host', 'value': cybcon_was.showAttribute(MQTCF, 'host'), 'description': 'Hostname', 'tagname': 'host'});
+        dataOut({'name': 'port', 'value': cybcon_was.showAttribute(MQTCF, 'port'), 'description': 'Port', 'tagname': 'port'});
+        dataOut({'name': 'channel', 'value': cybcon_was.showAttribute(MQTCF, 'channel'), 'description': 'Server connection channel', 'tagname': 'channel'});
+        #dataOut({'name': 'sslType', 'value': cybcon_was.showAttribute(MQTCF, 'sslType'), 'description': 'Use SSL to secure communication with WebSphere MQ', 'tagname': 'sslType'});
+        dataOut({'name': 'clientID', 'value': cybcon_was.showAttribute(MQTCF, 'clientID'), 'description': 'Client ID', 'tagname': 'clientID'});
+        dataOut({'name': 'cloneSupport', 'value': cybcon_was.showAttribute(MQTCF, 'cloneSupport'), 'description': 'Allow cloned durable subscriptions', 'tagname': 'cloneSupport'});
+        dataOut({'description': 'Advanced properties', 'tagname': "advancedproperties", 'tagtype': "1"});
+        dataOut({'name': 'clientReconnectOptions', 'value': cybcon_was.showAttribute(MQTCF, 'clientReconnectOptions'), 'description': 'Client reconnect options', 'tagname': 'clientReconnectOptions'});
+        dataOut({'name': 'clientReconnectTimeout', 'value': cybcon_was.showAttribute(MQTCF, 'clientReconnectTimeout'), 'unit': "seconds", 'description': 'Client reconnect timeout', 'tagname': 'clientReconnectTimeout'});
+        dataOut({'name': 'compressHeaders', 'value': cybcon_was.showAttribute(MQTCF, 'compressHeaders'), 'description': 'Compress message headers', 'tagname': 'compressHeaders'});
+        dataOut({'name': 'compressPayload', 'value': cybcon_was.showAttribute(MQTCF, 'compressPayload'), 'description': 'Compression algorithm for message payloads', 'tagname': 'compressPayload'});
+        dataOut({'name': 'pollingInterval', 'value': cybcon_was.showAttribute(MQTCF, 'pollingInterval'), 'unit': "milliseconds", 'description': 'Polling interval', 'tagname': 'pollingInterval'});
+        dataOut({'name': 'maxBatchSize', 'value': cybcon_was.showAttribute(MQTCF, 'maxBatchSize'), 'description': 'Maximum batch size', 'tagname': 'maxBatchSize'});
+        dataOut({'name': 'CCSID', 'value': cybcon_was.showAttribute(MQTCF, 'CCSID'), 'description': 'Coded character set identifier', 'tagname': 'CCSID'});
+        dataOut({'name': 'failIfQuiesce', 'value': cybcon_was.showAttribute(MQTCF, 'failIfQuiesce'), 'description': 'Fail JMS method calls if the queue manager is quiescing', 'tagname': 'failIfQuiesce'});
+        dataOut({'tagname': "advancedproperties", 'tagtype': "2"});
+        dataOut({'description': 'Broker properties', 'tagname': "brokerproperties", 'tagtype': "1"});
+        dataOut({'name': 'brokerControlQueue', 'value': cybcon_was.showAttribute(MQTCF, 'brokerControlQueue'), 'description': 'Broker control queue', 'tagname': 'brokerControlQueue'});
+        dataOut({'name': 'brokerPubQueue', 'value': cybcon_was.showAttribute(MQTCF, 'brokerPubQueue'), 'description': 'Broker publication queue', 'tagname': 'brokerPubQueue'});
+        dataOut({'name': 'brokerSubQueue', 'value': cybcon_was.showAttribute(MQTCF, 'brokerSubQueue'), 'description': 'Broker subscriber queue', 'tagname': 'brokerSubQueue'});
+        dataOut({'name': 'brokerCCSubQ', 'value': cybcon_was.showAttribute(MQTCF, 'brokerCCSubQ'), 'description': 'Broker connection consumer subscription queue', 'tagname': 'brokerCCSubQ'});
+        dataOut({'name': 'brokerVersion', 'value': cybcon_was.showAttribute(MQTCF, 'brokerVersion'), 'description': 'Broker Version', 'tagname': 'brokerVersion'});
+        dataOut({'name': 'msgSelection', 'value': cybcon_was.showAttribute(MQTCF, 'msgSelection'), 'description': 'Specify where message selection occurs', 'tagname': 'msgSelection'});
+        dataOut({'name': 'substore', 'value': cybcon_was.showAttribute(MQTCF, 'substore'), 'description': 'Subscription store', 'tagname': 'substore'});
+        dataOut({'name': 'statRefreshInterval', 'value': cybcon_was.showAttribute(MQTCF, 'statRefreshInterval'), 'unit': "milliseconds", 'description': 'Durable subscription state refresh interval', 'tagname': 'statRefreshInterval'});
+        dataOut({'name': 'pubSubCleanup', 'value': cybcon_was.showAttribute(MQTCF, 'pubSubCleanup'), 'description': 'Subscription cleanup level', 'tagname': 'pubSubCleanup'});
+        dataOut({'name': 'pubSubCleanupInterval', 'value': cybcon_was.showAttribute(MQTCF, 'pubSubCleanupInterval'), 'unit': "milliseconds", 'description': 'Subscription cleanup interval', 'tagname': 'pubSubCleanupInterval'});
+        dataOut({'name': 'wildcardFormat', 'value': cybcon_was.showAttribute(MQTCF, 'wildcardFormat'), 'description': 'Subscription wildcard format', 'tagname': 'wildcardFormat'});
+        dataOut({'name': 'publishAckInterval', 'value': cybcon_was.showAttribute(MQTCF, 'publishAckInterval'), 'unit': "messages", 'description': 'Publish acknowledgement window', 'tagname': 'publishAckInterval'});
+        dataOut({'name': 'sparseSubscriptions', 'value': cybcon_was.showAttribute(MQTCF, 'sparseSubscriptions'), 'description': 'Optimize for sparse subscription patterns', 'tagname': 'sparseSubscriptions'});
+        dataOut({'tagname': "brokerproperties", 'tagtype': "2"});
+        dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
+        PropSet="";
+        for PropSet in cybcon_was.splitArray(cybcon_was.showAttribute(MQTCF, 'propertySet')):
+          CusProp="";
+          for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(PropSet, 'resourceProperties')):
+            dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+          if CusProp == "":
+            dataOut({'value': "No resource properties found in this property set."});
+        if PropSet == "":
+          dataOut({'value': " No property set found."});
+        dataOut({'tagname': "customproperties", 'tagtype': "2"});
+        dataOut({'description': "Connection pool properties", 'tagname': "connectionpool", 'tagtype': "1"});
+        MQTCF_CPID = cybcon_was.showAttribute(MQTCF, 'connectionPool');
+        if MQTCF_CPID != "":
+          dataOut({'name': "connectionTimeout", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'connectionTimeout'), 'unit': "seconds", 'description': "Connection timeout", 'tagname': "connectiontimeout"});
+          dataOut({'name': "maxConnections", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'maxConnections'), 'unit': "connections", 'description': "Maximum connections", 'tagname': "maxconnections"});
+          dataOut({'name': "minConnections", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'minConnections'), 'unit': "connections", 'description': "Minimum connections", 'tagname': "minconnections"});
+          dataOut({'name': "reapTime", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'reapTime'), 'unit': "seconds", 'description': "Reap time", 'tagname': "reaptime"});
+          dataOut({'name': "unusedTimeout", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'unusedTimeout'), 'unit': "seconds", 'description': "Unused timeout", 'tagname': "unusedtimeout"});
+          dataOut({'name': "agedTimeout", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'agedTimeout'), 'unit': "seconds", 'description': "Aged timeout", 'tagname': "agedtimeout"});
+          dataOut({'name': "purgePolicy", 'value': cybcon_was.showAttribute(MQTCF_CPID, 'purgePolicy'), 'description': "Purge policy", 'tagname': "purgepolicy"});
+        else:
+          dataOut({'description': "WARNING", 'value': "No connection pool configuration object found - skip connection pool properties!"});
+        dataOut({'tagname': "connectionpool", 'tagtype': "2"});
+        dataOut({'description': "Session pools", 'tagname': "sessionpool", 'tagtype': "1"});
+        MQTCF_SPID = cybcon_was.showAttribute(MQTCF, 'sessionPool');
+        if MQTCF_SPID != "":
+          dataOut({'name': "connectionTimeout", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'connectionTimeout'), 'unit': "seconds", 'description': "Connection timeout", 'tagname': "connectiontimeout"});
+          dataOut({'name': "maxConnections", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'maxConnections'), 'unit': "connections", 'description': "Maximum connections", 'tagname': "maxconnections"});
+          dataOut({'name': "minConnections", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'minConnections'), 'unit': "connections", 'description': "Minimum connections", 'tagname': "minconnections"});
+          dataOut({'name': "reapTime", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'reapTime'), 'unit': "seconds", 'description': "Reap time", 'tagname': "reaptime"});
+          dataOut({'name': "unusedTimeout", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'unusedTimeout'), 'unit': "seconds", 'description': "Unused timeout", 'tagname': "unusedtimeout"});
+          dataOut({'name': "agedTimeout", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'agedTimeout'), 'unit': "seconds", 'description': "Aged timeout", 'tagname': "agedtimeout"});
+          dataOut({'name': "purgePolicy", 'value': cybcon_was.showAttribute(MQTCF_SPID, 'purgePolicy'), 'description': "Purge policy", 'tagname': "purgepolicy"});
+        else:
+          dataOut({'description': "WARNING", 'value': "No session pool configuration object found - skip session pool properties!"});
+        dataOut({'tagname': "sessionpool", 'tagtype': "2"});
+        dataOut({'tagname': "mqtopicconnectionfactory", 'tagtype': "2"});
+      else:
+        dataOut({'value': "No WebSphere MQ Topic connection factory defined on this scope."});
+    dataOut({'tagname': "mqtopicconnectionfactories", 'tagtype': "2"});
+
+
+
+    dataOut({'description': "WebSphere MQ Topics", 'tagname': "mqtopics", 'tagtype': "1"});
+    for MQTopic in AdminConfig.list('MQTopic', JMSProviderID).split(lineSeparator):
+      if MQTopic != "":
+        dataOut({'tagname': "mqtopic", 'tagtype': "1"});
+        dataOut({'name': 'name', 'value': cybcon_was.showAttribute(MQTopic, 'name'), 'description': 'Name', 'tagname': 'name'});
+        dataOut({'name': 'jndiName', 'value': cybcon_was.showAttribute(MQTopic, 'jndiName'), 'description': 'JNDI name', 'tagname': 'jndiName'});
+        dataOut({'description': 'WebSphere MQ topic', 'tagname': 'wasmqtopic', 'tagtype': "1"});
+        dataOut({'name': 'baseTopicName', 'value': cybcon_was.showAttribute(MQTopic, 'baseTopicName'), 'description': 'Topic name', 'tagname': 'baseTopicName'});
+        dataOut({'tagname': 'wasmqtopic', 'tagtype': "2"});
+        dataOut({'description': 'Advanced properties', 'tagname': 'advancedproperties', 'tagtype': "1"});
+        dataOut({'description': 'Delivery', 'tagname': 'delivery', 'tagtype': "1"});
+        dataOut({'name': 'persistence', 'value': cybcon_was.showAttribute(MQTopic, 'persistence'), 'description': 'Persistence', 'tagname': 'persistence'});
+        dataOut({'name': 'priority', 'value': cybcon_was.showAttribute(MQTopic, 'priority'), 'description': 'Priority', 'tagname': 'priority'});
+        dataOut({'name': 'specifiedPriority', 'value': cybcon_was.showAttribute(MQTopic, 'specifiedPriority'), 'description': 'Specified priority', 'tagname': 'specifiedPriority'});
+        dataOut({'name': 'expiry', 'value': cybcon_was.showAttribute(MQTopic, 'expiry'), 'description': 'Expiry', 'tagname': 'expiry'});
+        dataOut({'name': 'specifiedExpiry', 'value': cybcon_was.showAttribute(MQTopic, 'specifiedExpiry'), 'description': 'Specified expiry', 'tagname': 'especifiedExpiry'});
+        dataOut({'tagname': 'delivery', 'tagtype': "2"});
+        dataOut({'description': 'Message format', 'tagname': 'messageformat', 'tagtype': "1"});
+        dataOut({'name': 'CCSID', 'value': cybcon_was.showAttribute(MQTopic, 'CCSID'), 'description': 'Coded character set identifier', 'tagname': 'CCSID'});
+        dataOut({'name': 'useNativeEncoding', 'value': cybcon_was.showAttribute(MQTopic, 'useNativeEncoding'), 'description': 'Use native encodings', 'tagname': 'useNativeEncoding'});
+        dataOut({'name': 'integerEncoding', 'value': cybcon_was.showAttribute(MQTopic, 'integerEncoding'), 'description': 'Integer encoding', 'tagname': 'integerEncoding'});
+        dataOut({'name': 'decimalEncoding', 'value': cybcon_was.showAttribute(MQTopic, 'decimalEncoding'), 'description': 'Decimal encoding', 'tagname': 'decimalEncoding'});
+        dataOut({'name': 'floatingPointEncoding', 'value': cybcon_was.showAttribute(MQTopic, 'floatingPointEncoding'), 'description': 'Floating point encoding', 'tagname': 'floatingPointEncoding'});
+        dataOut({'name': 'messageBody', 'value': cybcon_was.showAttribute(MQTopic, 'messageBody'), 'description': 'Message body', 'tagname': 'messageBody'});
+        dataOut({'name': 'replyToStyle', 'value': cybcon_was.showAttribute(MQTopic, 'replyToStyle'), 'description': 'Reply to style', 'tagname': 'replyToStyle'});
+        dataOut({'tagname': 'messageformat', 'tagtype': "2"});
+        dataOut({'description': 'Optimizations', 'tagname': 'optimizations', 'tagtype': "1"});
+        dataOut({'name': 'sendAsync', 'value': cybcon_was.showAttribute(MQTopic, 'sendAsync'), 'description': 'Asynchronously send messages to the queue manager', 'tagname': 'sendAsync'});
+        dataOut({'name': 'readAhead', 'value': cybcon_was.showAttribute(MQTopic, 'readAhead'), 'description': 'Read ahead, and cache, non-persistent messages for consumers', 'tagname': 'readAhead'});
+        dataOut({'name': 'readAheadClose', 'value': cybcon_was.showAttribute(MQTopic, 'readAheadClose'), 'description': 'Read ahead consumer close method', 'tagname': 'readAheadClose'});
+        dataOut({'tagname': 'optimizations', 'tagtype': "2"});
+        dataOut({'description': 'Message descriptor', 'tagname': 'messagedescriptor', 'tagtype': "1"});
+        dataOut({'name': 'mqmdReadEnabled', 'value': cybcon_was.showAttribute(MQTopic, 'mqmdReadEnabled'), 'description': 'MQMD read enabled', 'tagname': 'mqmdReadEnabled'});
+        dataOut({'name': 'mqmdWriteEnabled', 'value': cybcon_was.showAttribute(MQTopic, 'mqmdWriteEnabled'), 'description': 'MQMD write enabled', 'tagname': 'mqmdWriteEnabled'});
+        dataOut({'tagname': 'messagedescriptor', 'tagtype': "2"});
+        dataOut({'description': 'Additional', 'tagname': 'additional', 'tagtype': "1"});
+        dataOut({'name': 'mqmdMessageContext', 'value': cybcon_was.showAttribute(MQTopic, 'mqmdMessageContext'), 'description': 'MQMD message context', 'tagname': 'mqmdMessageContext'});
+        dataOut({'tagname': 'additional', 'tagtype': "2"});
+        dataOut({'tagname': 'advancedproperties', 'tagtype': "2"});
+        dataOut({'tagname': "mqtopic", 'tagtype': "2"});
+      else:
+        dataOut({'value': "No WebSphere MQ topics defined on this scope."});
+    dataOut({'tagname': "mqtopics", 'tagtype': "2"});
   else:
     dataOut({'value': "No WebSphere MQ JMS Provider defined on this scope."});
 
@@ -1540,6 +1667,13 @@ def get_appServerProperties(serverID, serverName):
           dataOut({'name': "accessSessionOnTimeout", 'value': cybcon_was.showAttribute(SMID, 'accessSessionOnTimeout'), 'description': "Allow access on timeout", 'tagname': "accessSessionOnTimeout"});
           dataOut({'tagname': "serializedsessionparameters", 'tagtype': "2"});
           dataOut({'tagname': "serializesessionaccess", 'tagtype': "2"});
+          dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
+          CusProp="";
+          for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(SMID, 'properties')):
+            dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+          if CusProp == "":
+            dataOut({'value': "No custom properties set."});
+          dataOut({'tagname': "customproperties", 'tagtype': "2"});
           dataOut({'tagname': "sessionservice", 'tagtype': "2"});
         else:
           dataOut({'value': "No Session management properties exists."});
@@ -3465,6 +3599,64 @@ def get_webServerPlugin(serverID):
       dataOut({'tagname': "requestrouting", 'tagtype': "2"});
   dataOut({'tagname': "pluginproperties", 'tagtype': "2"});
 
+#----------------------------------------------------------------------------
+# get_UsersAndGroups
+#   description: get informations about Users and Groups
+#   input: cellID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_UsersAndGroups(cellID):
+  dataOut({'description': 'Users and Groups', 'tagname': 'usersandgroups', 'tagtype': '1'});
+
+  # get the primaryAdminID
+  dataOut({'description': 'Administrative user roles', 'tagname': 'administrativeuserroles', 'tagtype': '1'});
+  dataOut({'tagname': 'WIMUserRegistry', 'tagtype': '1'});
+  WIMUserRegistryID=AdminConfig.list('WIMUserRegistry', cellID);
+  primaryAdminID='';
+  if WIMUserRegistryID != "":
+    primaryAdminId=cybcon_was.showAttribute(WIMUserRegistryID, 'primaryAdminId');
+    if primaryAdminId != "":
+      dataOut({'name': 'primaryAdminID', 'value': cybcon_was.showAttribute(WIMUserRegistryID, 'primaryAdminId'), 'description': 'User', 'tagname': 'primaryAdminID'});
+      dataOut({'tagname': 'roles', 'tagtype': '1'});
+      dataOut({'name': 'role', 'value': 'Primary administrative user name', 'description': 'Role', 'tagname': 'role'});
+      dataOut({'tagname': 'roles', 'tagtype': '2'});
+    else:
+      dataOut({'description': 'INFO', 'value': 'No primary admin id set in WIMUserRegistry!'});
+  dataOut({'tagname': 'WIMUserRegistry', 'tagtype': '2'});
+
+  # get additional users and their roles
+  dataOut({'tagname': 'UserExt', 'tagtype': '1'});
+  rolesHash={};
+  ExtUserRoles=AdminTask.listUserIDsOfAuthorizationGroup().replace("{", "").replace("}", "").strip().split("], ");
+  for ExtUserRole in ExtUserRoles:
+    ExtUserRole=ExtUserRole.replace("[", "").replace("]", "").strip();
+    role, userlist = ExtUserRole.split("=", 1);
+    if userlist == "": continue;
+    users=userlist.split(",");
+    for user in users:
+      user=user.strip();
+      if rolesHash.has_key(user) != 1: rolesHash[user] = [];
+      rolesHash[user].append(role);
+
+  for UserExtID in AdminConfig.list('UserExt', cellID).split(lineSeparator):
+    if UserExtID == '': continue;
+    UserExtName=cybcon_was.showAttribute(UserExtID, 'name');
+    dataOut({'name': 'name', 'value': UserExtName, 'description': 'User', 'tagname': 'name'});
+    dataOut({'tagname': 'roles', 'tagtype': '1'});
+    if rolesHash.has_key(UserExtName) == 1:
+      for roleName in rolesHash[UserExtName]:
+        dataOut({'name': 'role', 'value': roleName, 'description': 'Role', 'tagname': 'role'});
+    else:
+      dataOut({'name': 'role', 'value': 'none', 'description': 'Role', 'tagname': 'role'});
+    dataOut({'tagname': 'roles', 'tagtype': '2'});
+
+  dataOut({'tagname': 'UserExt', 'tagtype': '2'});
+
+  dataOut({'description': 'Administrative user roles', 'tagname': 'administrativeuserroles', 'tagtype': '2'});
+  dataOut({'tagname': 'usersandgroups', 'tagtype': '2'});
+
+
 #############################################################################
 # MAIN program
 #############################################################################
@@ -3531,7 +3723,12 @@ if CONFIG['general']['services'] == "true":
 #===========================================================================
 # get cell specific configuration
 cellName = AdminControl.getCell();
-cellID = AdminConfig.getid('/Cell:' + cellName + '/');
+cellID = '';
+try:
+  cellID = AdminConfig.getid('/Cell:' + cellName + '/');
+except:
+  dataOut({'description': "ERROR: Exception received while trying to get the object ID of the cell with name", 'value': cellName});
+  sys.exit(1);
 
 if CONFIG['general']['cell'] == "true":
   dataOut({'name': "Cell", 'value': cellName, 'description': "WAS cell", 'tagname': "cell", 'tagtype': "1"});
@@ -3561,6 +3758,7 @@ if CONFIG['general']['cell'] == "true":
     dataOut({'tagname': "naming", 'tagtype': "2"});
   if CONFIG['cell']['SIBus'] == "true": get_SIBusProperties(cellID);
   dataOut({'tagname': "environment", 'tagtype': "2"});
+  if CONFIG['cell']['UsersAndGroups'] == "true": get_UsersAndGroups(cellID);
 
 #===========================================================================
 # loop over clusers
@@ -3774,3 +3972,5 @@ elapsedTime = str("%.2f" % (endTime - startTime));
 dataOut({'tagname': "meta", 'name': "elapsedTime", 'value': elapsedTime, 'unit': "seconds", 'description': "Script runtime", 'tagtype': "3"});
 dataOut({'tagname': "foot", 'tagtype': "2"});
 dataOut({'tagname': "configcrawler", 'tagtype': "2"});
+
+

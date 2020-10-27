@@ -30,17 +30,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 41 $
-#  $LastChangedDate: 2014-04-01 13:42:56 +0200 (Tue, 01 Apr 2014) $
+#  $Revision: 53 $
+#  $LastChangedDate: 2015-11-19 17:16:48 +0100 (Thu, 19 Nov 2015) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 41 2014-04-01 11:42:56Z cybcon89 $
+#  $Id: cybcon_was.py 53 2015-11-19 16:16:48Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.031";                       # version of this library
+cybcon_was_lib_version="1.032";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -414,6 +414,7 @@ def get_serverMembersByNodeName(nodeName):
   servers = [];
 
   # loop over all servers
+  areThereChanges=AdminConfig.hasChanges();
   for myServer in AdminConfig.list("Server").split(lineSeparator):
     # check if the server is on the given node
     if myServer.lower().find(nodeName) != -1:
@@ -421,6 +422,12 @@ def get_serverMembersByNodeName(nodeName):
       serverName = showAttribute(myServer, 'name');
       # append server name if it is not empty
       if serverName != "": servers.append(serverName);
+
+  # The AdminConfig.list("Server") will do something in the cache a modification
+  # when a webserver is in the list. This will not happen regulary. But to prevent
+  # the WARNING message: "WASX7309W: No "save" was performed ...", I will clean up
+  # that "change"
+  if AdminConfig.hasChanges() == 1 and areThereChanges == 0: AdminConfig.reset();
 
   # return the array of server member names
   return servers;
@@ -474,6 +481,7 @@ def identify_serverOrClusterByName(objectName):
 
   # ok, at this point we know it is no cluster, proceed with the serverlist
   # get all configured servers
+  areThereChanges=AdminConfig.hasChanges();
   for myServer in AdminConfig.list("Server").split(lineSeparator):
     # if the server ID is not empty
     if myServer != "":
@@ -481,6 +489,12 @@ def identify_serverOrClusterByName(objectName):
       serverName = showAttribute(myServer, 'name');
       # append server name to array if it is not empty
       if serverName != "": clusterlist.append(serverName);
+
+  # The AdminConfig.list("Server") will do something in the cache a modification
+  # when a webserver is in the list. This will not happen regulary. But to prevent
+  # the WARNING message: "WASX7309W: No "save" was performed ...", I will clean up
+  # that "change"
+  if AdminConfig.hasChanges() == 1 and areThereChanges == 0: AdminConfig.reset();
 
   # check if the given name is in the server list
   if find_valueInArray(objectName, serverlist) == "true": return "Server"
