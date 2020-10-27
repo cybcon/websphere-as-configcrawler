@@ -28,11 +28,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-#---------------------------------------------------------------------
-#  $Revision: 64 $
-#  $LastChangedDate: 2016-05-17 21:51:52 +0200 (Tue, 17 May 2016) $
-#  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 64 2016-05-17 19:51:52Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +35,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.644";
+VERSION="0.650";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -1824,6 +1819,10 @@ def get_appServerProperties(serverID, serverName):
   dataOut({'name': "locateRequestTimeout", 'value': cybcon_was.showAttribute(orbID, 'locateRequestTimeout'), 'unit': "seconds", 'description': "Locate request timeout", 'tagname': "locateRequestTimeout"});
   dataOut({'name': "forceTunnel", 'value': cybcon_was.showAttribute(orbID, 'forceTunnel'), 'description': "Force tunnel", 'tagname': "forceTunnel"});
   dataOut({'name': "noLocalCopies", 'value': cybcon_was.showAttribute(orbID, 'noLocalCopies'), 'description': "Pass by reference", 'tagname': "noLocalCopies"});
+  dataOut({'description': "properties", 'tagname': "properties", 'tagtype': "1"});
+  for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(orbID, 'properties')):
+    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+  dataOut({'tagname': "properties", 'tagtype': "2"});
   dataOut({'description': "Thread Pool", 'tagname': "threadpool", 'tagtype': "1"});
   orbTPID = cybcon_was.showAttribute(orbID, 'threadPool');
   if orbTPID == "":
@@ -1924,56 +1923,65 @@ def get_JVMPropertiesFromServer(serverID):
     dataOut({'value': "No Class loaders defined"});
   dataOut({'tagname': "classloaders", 'tagtype': "2"});
 
-  dataOut({'description': "Process Definition", 'tagname': "processdefinition", 'tagtype': "1"});
-  dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
-  CusProp="";
-  for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(AdminConfig.list('JavaProcessDef', serverID), 'environment')):
-    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
-  if CusProp == "":
-    dataOut({'value': "No custom properties set."});
-  dataOut({'tagname': "customproperties", 'tagtype': "2"});
+  dataOut({'description': "Server Instance", 'tagname': "serverinstance", 'tagtype': "1"});
+  serverInstanceId = AdminConfig.list('ServerInstance', serverID)
+  dataOut({'name': "enableMultipleServerInstances", 'value': cybcon_was.showAttribute(serverInstanceId, 'enableMultipleServerInstances'), 'description': "enableMultipleServerInstances", 'tagname': "enableMultipleServerInstances"});
+  dataOut({'name': "minimumNumOfInstances", 'value': cybcon_was.showAttribute(serverInstanceId, 'minimumNumOfInstances'), 'description': "minimumNumOfInstances", 'tagname': "minimumNumOfInstances"});
+  dataOut({'name': "maximumNumberOfInstances", 'value': cybcon_was.showAttribute(serverInstanceId, 'maximumNumberOfInstances'), 'description': "maximumNumberOfInstances", 'tagname': "maximumNumberOfInstances"});
+  dataOut({'tagname': "serverinstance", 'tagtype': "2"});
 
-  dataOut({'description': "Java Virtual Machine", 'tagname': "javavirtualmachine", 'tagtype': "1"});
-  jvmID = AdminConfig.list('JavaVirtualMachine', AdminConfig.list('JavaProcessDef', serverID));
-  dataOut({'name': "classpath", 'value': cybcon_was.showAttribute(jvmID, 'classpath'), 'description': "Classpath", 'tagname': "classpath"});
-  dataOut({'name': "bootClasspath", 'value': cybcon_was.showAttribute(jvmID, 'bootClasspath'), 'description': "Boot Classpath", 'tagname': "bootClasspath"});
-  dataOut({'name': "verboseModeClass", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeClass'), 'description': "Verbose class loading", 'tagname': "verboseModeClass"});
-  dataOut({'name': "verboseModeGarbageCollection", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeGarbageCollection'), 'description': "Verbose Garbage Collection", 'tagname': "verboseModeGarbageCollection"});
-  dataOut({'name': "verboseModeJNI", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeJNI'), 'description': "Verbose JNI", 'tagname': "verboseModeJNI"});
-  dataOut({'name': "initialHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'initialHeapSize'), 'description': "Initial Heap Size", 'tagname': "initialHeapSize"});
-  dataOut({'name': "maximumHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'maximumHeapSize'), 'description': "Maximum Heap Size", 'tagname': "maximumHeapSize"});
-  dataOut({'name': "runHProf", 'value': cybcon_was.showAttribute(jvmID, 'runHProf'), 'description': "Run HProf", 'tagname': "runHProf"});
-  dataOut({'name': "debugMode", 'value': cybcon_was.showAttribute(jvmID, 'debugMode'), 'description': "Debug Mode", 'tagname': "debugMode"});
-  dataOut({'name': "debugArgs", 'value': cybcon_was.showAttribute(jvmID, 'debugArgs'), 'description': "Debug arguments", 'tagname': "debugArgs"});
-  dataOut({'name': "genericJvmArguments", 'value': cybcon_was.showAttribute(jvmID, 'genericJvmArguments'), 'description': "Generic JVM arguments", 'tagname': "genericJvmArguments"});
-  dataOut({'name': "disableJIT", 'value': cybcon_was.showAttribute(jvmID, 'disableJIT'), 'description': "Disable JIT", 'tagname': "disableJIT"});
-  dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
-  CusProp="";
-  for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(jvmID, 'systemProperties')):
-    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
-  if CusProp == "":
-    dataOut({'value': "No custom properties set."});
-  dataOut({'tagname': "customproperties", 'tagtype': "2"});
-  dataOut({'tagname': "javavirtualmachine", 'tagtype': "2"});
-  dataOut({'tagname': "processdefinition", 'tagtype': "2"});
+  dataOut({'description': "Process Definitions", 'tagname': "processdefinitions", 'tagtype': "1"});
+  for processID in AdminConfig.list('JavaProcessDef', serverID).split(lineSeparator):
+    dataOut({'name': "processType", 'value': AdminConfig.showAttribute(processID,"processType"),'description': "Process Definition", 'tagname': "processdefinition", 'tagtype': "1"});
+    dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
+    CusProp="";
+    for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(processID, 'environment')):
+      dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+    if CusProp == "":
+      dataOut({'value': "No custom properties set."});
+    dataOut({'tagname': "customproperties", 'tagtype': "2"});
+    dataOut({'description': "Java Virtual Machine", 'tagname': "javavirtualmachine", 'tagtype': "1"});
+    jvmID = AdminConfig.list('JavaVirtualMachine', processID);
+    dataOut({'name': "classpath", 'value': cybcon_was.showAttribute(jvmID, 'classpath'), 'description': "Classpath", 'tagname': "classpath"});
+    dataOut({'name': "bootClasspath", 'value': cybcon_was.showAttribute(jvmID, 'bootClasspath'), 'description': "Boot Classpath", 'tagname': "bootClasspath"});
+    dataOut({'name': "verboseModeClass", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeClass'), 'description': "Verbose class loading", 'tagname': "verboseModeClass"});
+    dataOut({'name': "verboseModeGarbageCollection", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeGarbageCollection'), 'description': "Verbose Garbage Collection", 'tagname': "verboseModeGarbageCollection"});
+    dataOut({'name': "verboseModeJNI", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeJNI'), 'description': "Verbose JNI", 'tagname': "verboseModeJNI"});
+    dataOut({'name': "initialHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'initialHeapSize'), 'description': "Initial Heap Size", 'tagname': "initialHeapSize"});
+    dataOut({'name': "maximumHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'maximumHeapSize'), 'description': "Maximum Heap Size", 'tagname': "maximumHeapSize"});
+    dataOut({'name': "runHProf", 'value': cybcon_was.showAttribute(jvmID, 'runHProf'), 'description': "Run HProf", 'tagname': "runHProf"});
+    dataOut({'name': "debugMode", 'value': cybcon_was.showAttribute(jvmID, 'debugMode'), 'description': "Debug Mode", 'tagname': "debugMode"});
+    dataOut({'name': "debugArgs", 'value': cybcon_was.showAttribute(jvmID, 'debugArgs'), 'description': "Debug arguments", 'tagname': "debugArgs"});
+    dataOut({'name': "genericJvmArguments", 'value': cybcon_was.showAttribute(jvmID, 'genericJvmArguments'), 'description': "Generic JVM arguments", 'tagname': "genericJvmArguments"});
+    dataOut({'name': "disableJIT", 'value': cybcon_was.showAttribute(jvmID, 'disableJIT'), 'description': "Disable JIT", 'tagname': "disableJIT"});
+    dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
+    CusProp="";
+    for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(jvmID, 'systemProperties')):
+      dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+    if CusProp == "":
+      dataOut({'value': "No custom properties set."});
+    dataOut({'tagname': "customproperties", 'tagtype': "2"});
+    dataOut({'tagname': "javavirtualmachine", 'tagtype': "2"});
 
-  procExecID = cybcon_was.showAttribute(AdminConfig.list('JavaProcessDef', serverID), 'execution');
-  dataOut({'description': "Process Execution", 'tagname': "processexecution", 'tagtype': "1"});
-  dataOut({'name': "processPriority", 'value': cybcon_was.showAttribute(procExecID, 'processPriority'), 'description': "Process Priority", 'tagname': "processPriority"});
-  dataOut({'name': "umask", 'value': cybcon_was.showAttribute(procExecID, 'umask'), 'description': "UMASK", 'tagname': "umask"});
-  dataOut({'name': "runAsUser", 'value': cybcon_was.showAttribute(procExecID, 'runAsUser'), 'description': "Run As User", 'tagname': "runAsUser"});
-  dataOut({'name': "runAsGroup", 'value': cybcon_was.showAttribute(procExecID, 'runAsGroup'), 'description': "Run As Group", 'tagname': "runAsGroup"});
-  dataOut({'name': "runInProcessGroup", 'value': cybcon_was.showAttribute(procExecID, 'runInProcessGroup'), 'description': "Run In Process Group", 'tagname': "runInProcessGroup"});
-  dataOut({'tagname': "processexecution", 'tagtype': "2"});
+    procExecID = cybcon_was.showAttribute(processID, 'execution');
+    dataOut({'description': "Process Execution", 'tagname': "processexecution", 'tagtype': "1"});
+    dataOut({'name': "processPriority", 'value': cybcon_was.showAttribute(procExecID, 'processPriority'), 'description': "Process Priority", 'tagname': "processPriority"});
+    dataOut({'name': "umask", 'value': cybcon_was.showAttribute(procExecID, 'umask'), 'description': "UMASK", 'tagname': "umask"});
+    dataOut({'name': "runAsUser", 'value': cybcon_was.showAttribute(procExecID, 'runAsUser'), 'description': "Run As User", 'tagname': "runAsUser"});
+    dataOut({'name': "runAsGroup", 'value': cybcon_was.showAttribute(procExecID, 'runAsGroup'), 'description': "Run As Group", 'tagname': "runAsGroup"});
+    dataOut({'name': "runInProcessGroup", 'value': cybcon_was.showAttribute(procExecID, 'runInProcessGroup'), 'description': "Run In Process Group", 'tagname': "runInProcessGroup"});
+    dataOut({'tagname': "processexecution", 'tagtype': "2"});
 
-  dataOut({'description': "Monitoring Policy", 'tagname': "monitoringpolicy", 'tagtype': "1"});
-  monitoringPolicyID = cybcon_was.showAttribute(AdminConfig.list('JavaProcessDef', serverID), 'monitoringPolicy');
-  dataOut({'name': "maximumStartupAttempts", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'maximumStartupAttempts'), 'unit': "attempts", 'description': "Maximum startup attempts", 'tagname': "maximumStartupAttempts"});
-  dataOut({'name': "pingInterval", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'pingInterval'), 'unit': "seconds", 'description': "Ping interval", 'tagname': "pingInterval"});
-  dataOut({'name': "pingTimeout", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'pingTimeout'), 'unit': "seconds", 'description': "Ping timeout", 'tagname': "pingTimeout"});
-  dataOut({'name': "autoRestart", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'autoRestart'), 'description': "Automatic restart", 'tagname': "autoRestart"});
-  dataOut({'name': "nodeRestartState", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'nodeRestartState'), 'description': "Node restart state", 'tagname': "nodeRestartState"});
-  dataOut({'tagname': "monitoringpolicy", 'tagtype': "2"});
+    dataOut({'description': "Monitoring Policy", 'tagname': "monitoringpolicy", 'tagtype': "1"});
+    monitoringPolicyID = cybcon_was.showAttribute(processID, 'monitoringPolicy');
+    dataOut({'name': "maximumStartupAttempts", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'maximumStartupAttempts'), 'unit': "attempts", 'description': "Maximum startup attempts", 'tagname': "maximumStartupAttempts"});
+    dataOut({'name': "pingInterval", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'pingInterval'), 'unit': "seconds", 'description': "Ping interval", 'tagname': "pingInterval"});
+    dataOut({'name': "pingTimeout", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'pingTimeout'), 'unit': "seconds", 'description': "Ping timeout", 'tagname': "pingTimeout"});
+    dataOut({'name': "autoRestart", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'autoRestart'), 'description': "Automatic restart", 'tagname': "autoRestart"});
+    dataOut({'name': "nodeRestartState", 'value': cybcon_was.showAttribute(monitoringPolicyID, 'nodeRestartState'), 'description': "Node restart state", 'tagname': "nodeRestartState"});
+    dataOut({'tagname': "monitoringpolicy", 'tagtype': "2"});
+    dataOut({'tagname': "processdefinition", 'tagtype': "2"});
+  dataOut({'tagname': "processdefinitions", 'tagtype': "2"});
 
   dataOut({'tagname': "javaandprocessmanagement", 'tagtype': "2"});
   dataOut({'tagname': "serverinfrastructure", 'tagtype': "2"});

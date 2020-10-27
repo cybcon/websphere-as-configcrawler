@@ -29,18 +29,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-#---------------------------------------------------------------------
-#  $Revision: 61 $
-#  $LastChangedDate: 2016-02-25 19:25:39 +0100 (Thu, 25 Feb 2016) $
-#  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 61 2016-02-25 18:25:39Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.033";                       # version of this library
+cybcon_was_lib_version="1.041";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -398,6 +393,35 @@ def get_clusterMemberNames(clusterName):
   return clusterMemberNames;
 
 #----------------------------------------------------------------------------
+# get_clusterTargetNames
+#   description: get all names of the cluster nodes and members
+#   input: clusterName
+#   return: array of <node name>:<member name>
+#----------------------------------------------------------------------------
+def get_clusterTargetNames(clusterName):
+  # return if cluster name is not given to function
+  if clusterName == "": return;
+
+  # define array for the cluster member names
+  clusterTargetNames = [];
+
+  # get the ID from the cluster name
+  clusterID = AdminConfig.getid('/ServerCluster:' + clusterName + '/');
+
+  # get the cluster member IDs from the cluster
+  for clusterMemberID in showAttribute(clusterID, 'members').replace("[", "").replace("]", "").split():
+    # get the name of the cluster members node and name
+    nodeName = showAttribute(clusterMemberID, 'nodeName');
+    serverName = showAttribute(clusterMemberID, 'memberName');
+
+    # append name to array if the name is not empty
+    if serverName != "": clusterTargetNames.append(nodeName + ':' + serverName);
+
+  # return array
+  return clusterTargetNames;
+
+
+#----------------------------------------------------------------------------
 # get_serverMembersByNodeName
 #   description: get the names from all server members by node
 #   input: name of node
@@ -519,6 +543,27 @@ def get_applicationStateOnServer(appName, serverName):
   else:
     return "stopped";
 
+
+#----------------------------------------------------------------------------
+# get_applicationStateOnTarget
+#   description: get the state of an application on a single server member
+#   input: string (application name), string (node name), string (server name)
+#   return: string (status): "started" | "stopped"
+#----------------------------------------------------------------------------
+def get_applicationStateOnTarget(appName, nodeName, serverName):
+  # return "stopped" if application name or server name is not given to function
+  if appName == "": return "stopped";
+  if nodeName == "": return "stopped";
+  if serverName == "": return "stopped";
+
+  # look if the MBean of the application exists - if it exists, the application is running
+  if AdminControl.queryNames('type=Application,name=' + appName + ',node=' + nodeName + ',process=' + serverName + ',*') != "":
+    return "started";
+  else:
+    return "stopped";
+
+
+
 #----------------------------------------------------------------------------
 # get_applicationIDByName
 #   description: get the objectID of an application by it's application name
@@ -581,6 +626,66 @@ def get_applicationTargetServerNames(appName):
   return serverNames;
 
 #----------------------------------------------------------------------------
+# get_applicationTargetAppServerNames
+#   description: get the application server names on which the application is configured
+#   input: string (application name)
+#   return: array of  <node name>:<server name>
+#----------------------------------------------------------------------------
+def get_applicationTargetAppServerNames(appName):
+  # return empty string if application name is not given to function
+  if appName == "": return "";
+
+  # defining array to store server names
+  serverNames = [];
+
+  # get the cell name
+  cellName = AdminControl.getCell();
+
+  # get objectID of the application
+  appID = get_applicationIDByName(appName);
+
+  # get all targets on which the application is mapped
+  for targetMappingID in splitArray(showAttribute(appID, 'targetMappings')):
+    # continue if no mapping exists
+    if targetMappingID == "": continue;
+
+    # get the name of the target
+    targetID = showAttribute(targetMappingID, 'target');
+    targetName = showAttribute(targetID, 'name');
+
+    # identify the target by it's name
+    targetType = identify_serverOrClusterByName(targetName);
+
+    # target is a cluster, get server members in cluster
+    if targetType == "ServerCluster":
+      # loop over cluster members
+      for clusterTarget in get_clusterTargetNames(targetName):
+        nodeName = clusterTarget.split(':')[0];
+        serverName = clusterTarget.split(':')[1];
+        serverID = AdminConfig.getid('/Cell:' + cellName + '/Node:' + nodeName + '/Server:' + serverName + '/');
+        serverType = showAttribute(serverID, 'serverType');
+        # only proceed if serverType is APPLICATION_SERVER
+        if serverType == 'APPLICATION_SERVER':
+          # append serverName if it is not already in array
+          if find_valueInArray(nodeName + ':' + serverName, serverNames): serverNames.append(nodeName + ':' + serverName);
+
+    # target is a server
+    if targetType == "Server":
+      # get node name
+      nodeName = showAttribute(targetID, 'nodeName');
+      serverID = AdminConfig.getid('/Cell:' + cellName + '/Node:' + nodeName + '/Server:' + targetName + '/');
+      serverType = showAttribute(serverID, 'serverType');
+      # only proceed if serverType is APPLICATION_SERVER
+      if serverType == 'APPLICATION_SERVER':
+        if find_valueInArray(nodeName + ':' + targetName, serverNames): serverNames.append(nodeName + ':' + targetName);
+
+  # get serverlist back
+  return serverNames;
+
+
+
+
+#----------------------------------------------------------------------------
 # get_applicationState
 #   description: get the state of an application
 #   input: string (application name)
@@ -595,11 +700,18 @@ def get_applicationState(appName):
   FLAG_false = "unset";
 
   # get target server members from application name
-  serverNames = get_applicationTargetServerNames(appName);
+  #serverNames = get_applicationTargetServerNames(appName);
+  targetNames = get_applicationTargetAppServerNames(appName);
 
   # loop over server name and set the FLAGs
-  for serverName in serverNames:
-    if get_applicationStateOnServer(appName, serverName) == "started": FLAG_true = "set";
+  #for serverName in serverNames:
+  #  if get_applicationStateOnServer(appName, serverName) == "started": FLAG_true = "set";
+  #  else: FLAG_false = "set";
+  # loop over target names and set the FLAGs
+  for targetName in targetNames:
+    nodeName = targetName.split(':')[0];
+    serverName = targetName.split(':')[1];
+    if get_applicationStateOnTarget(appName, nodeName, serverName) == "started": FLAG_true = "set";
     else: FLAG_false = "set";
 
   # check the flags and return values
@@ -976,12 +1088,15 @@ cybcon_was - Cybcon Industries simple python/jython WebSphere functions library
  nodeAgentID = cybcon_was.get_nodeAgentID(nodeName);
  A_clusterNames = cybcon_was.get_clusterNames();
  A_serverNames = cybcon_was.get_clusterMemberNames(clusterName);
+ A_nodeAndServerNames = cybcon_was.get_clusterTargetNames(clusterName);
  A_serverNames = cybcon_was.get_serverMembersByNodeName(nodeName);
  A_applicationNames = cybcon_was.get_applications();
  S_srvOrCl = cybcon_was.identify_serverOrClusterByName(objectName);
  S_appState = cybcon_was.get_applicationStateOnServer(appName, serverName);
+ S_appState = cybcon_was.get_applicationStateOnTarget(appName, nodeName, serverName);
  appID = cybcon_was.get_applicationIDByName(appName);
  A_serverNames = cybcon_was.get_applicationTargetServerNames(appName);
+ A_nodeAndServerNames = cybcon_was.get_applicationTargetAppServerNames(appName);
  S_listenerPortState = cybcon_was.get_listenerPortState(listenerPortID);
  S_listenerPortInitialState = cybcon_was.get_listenerPortInitialState(listenerPortID);
  S_appState = cybcon_was.get_applicationState(appName);
@@ -1165,6 +1280,10 @@ The functions returns an array of names of all clusters in the WebSphere cell.
 
 The functions returns an array of server names which are members in the given cluster.
 
+=item B<cybcon_was.get_clusterTargetNames(clusterName)>
+
+The functions returns an array of node_name:server_name which are targets in the given cluster.
+
 =item B<cybcon_was.get_serverMembersByNodeName(nodeName)>
 
 The functions returns an array of server names which are members in the given node.
@@ -1186,10 +1305,19 @@ This function searches the right objectID of an application object by a given ap
 
 This function get's all mapped server members on which the application is mapped.
 
+=item B<cybcon_was.get_applicationTargetAppServerNames(appName)>
+
+This function get's all mapped server members and nodes on which the application is mapped.
+
 =item B<cybcon_was.get_applicationStateOnServer(appName, serverName)>
 
 This function determine the state of an application (identified by it's name) on a specific
 server member (also identified by it's name). The application state is "started" or "stopped".
+
+=item B<cybcon_was.get_applicationStateOnTarget(appName, nodeName, serverName)>
+
+This function determine the state of an application (identified by it's name) on a specific
+server node and member (also identified by the names). The application state is "started" or "stopped".
 
 =item B<cybcon_was.get_listenerPortState(listenerPortID)>
 
@@ -1298,8 +1426,12 @@ If some stops where initiated and some not, the function returns a "partially".
  print "WAS cell: " + AdminControl.getCell();
  for clusterName in cybcon_was.get_clusterNames():
    print "  WAS cluster: " + clusterName;
-   for serverName in cybcon_was.get_clusterMemberNames(clusterName):
-     print "    WAS server member: " + serverName;
+   #for serverName in cybcon_was.get_clusterMemberNames(clusterName):
+   #  print "    WAS server member: " + serverName;
+   for target in cybcon_was.get_clusterTargetNames(clusterName):
+     nodeName = target.split(':')[0];
+     serverName = target.split(':')[1];
+     print "    WAS server member: " + serverName + " on node: " + nodeName;
  for nodeName in get_nodeNames():
    print "  WAS node: " + nodeName;
    for serverName in cybcon_was.get_serverMembersByNodeName(nodeName):
