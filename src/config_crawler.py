@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 54 $
-#  $LastChangedDate: 2015-11-19 17:18:36 +0100 (Thu, 19 Nov 2015) $
+#  $Revision: 56 $
+#  $LastChangedDate: 2015-12-08 22:14:15 +0100 (Tue, 08 Dec 2015) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 54 2015-11-19 16:18:36Z cybcon89 $
+#  $Id: config_crawler.py 56 2015-12-08 21:14:15Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.630";
+VERSION="0.640";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -117,13 +117,13 @@ def get_configuration(configfile):
   configAttributes = {};
   configAttributes['general'] = ['services', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'application', 'LogPasswords', 'output_format'];
   configAttributes['services'] = ['serviceProviders', 'policySets'];
-  configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus', 'UsersAndGroups' ];
-  configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
+  configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus', 'UsersAndGroups', 'Schedulers'];
+  configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'Schedulers'];
   configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions', 'MapRolesToUsers', 'MapRunAsRolesToUsers', 'MapResRefToEJB', 'MapEJBRefToEJB', 'MapJaspiProvider', 'MapModulesToServers', 'MetadataCompleteForModules', 'ModuleBuildID', 'CtxRootForWebMod', 'MapInitParamForServlet', 'MapWebModToVH'];
-  configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
+  configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'Schedulers'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
-  configAttributes['appserver'] = ['ApplicationServerProperties', 'JVM_properties', 'EndPointPorts', 'DCSTransports', 'MSGListenerPorts', 'JMS_provider', 'HAManagerService', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'Logging'];
+  configAttributes['appserver'] = ['ApplicationServerProperties', 'JVM_properties', 'EndPointPorts', 'DCSTransports', 'MSGListenerPorts', 'JMS_provider', 'HAManagerService', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'Logging', 'Schedulers'];
   configAttributes['webserver'] = ['WebServerProperties', 'EndPointPorts', 'Logging', 'Plugin_properties', 'RemoteWebServerMgmnt', 'Websphere_variables'];
   configAttributes['cybcon_was'] = [ 'libPath', 'minVersion' ];
 # default value
@@ -3657,6 +3657,46 @@ def get_UsersAndGroups(cellID):
   dataOut({'tagname': 'usersandgroups', 'tagtype': '2'});
 
 
+
+#----------------------------------------------------------------------------
+# get_Schedulers
+#   description: search the Scheduler instances by it's given objectID
+#   input: objectID (can be cellID, clusterID, nodeID or serverID)
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_Schedulers(objectID):
+  dataOut({'description': "Schedulers", 'tagname': "schedulers", 'tagtype': "1"});
+
+  # get name and objectType of the objectID
+  objectName = cybcon_was.showAttribute(objectID, 'name');
+  objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
+
+  schedulerProviderID = '';
+  schedulerProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/SchedulerProvider:SchedulerProvider/');
+  if schedulerProviderID != '':
+    dataOut({'tagname': 'SchedulerConfigurations', 'tagtype': '1'});
+    for schedulerID in AdminConfig.list('SchedulerConfiguration', schedulerProviderID).split(lineSeparator):
+      if schedulerID == '': continue;
+      dataOut({'tagname': 'SchedulerConfiguration', 'tagtype': '1'});
+      dataOut({'name': 'name', 'value': cybcon_was.showAttribute(schedulerID, 'name'), 'description': 'Name', 'tagname': 'name'});
+      dataOut({'name': 'jndiName', 'value': cybcon_was.showAttribute(schedulerID, 'jndiName'), 'description': 'JNDI name', 'tagname': 'jndiName'});
+      dataOut({'name': 'datasourceJNDIName', 'value': cybcon_was.showAttribute(schedulerID, 'datasourceJNDIName'), 'description': 'Data source JNDI name', 'tagname': 'datasourceJNDIName'});
+      dataOut({'name': 'datasourceAlias', 'value': cybcon_was.showAttribute(schedulerID, 'datasourceAlias'), 'description': 'Data source alias', 'tagname': 'datasourceAlias'});
+      dataOut({'name': 'tablePrefix', 'value': cybcon_was.showAttribute(schedulerID, 'tablePrefix'), 'description': 'Table prefix', 'tagname': 'tablePrefix'});
+      dataOut({'name': 'pollInterval', 'value': cybcon_was.showAttribute(schedulerID, 'pollInterval'), 'description': 'Poll interval', 'tagname': 'pollInterval'});
+      dataOut({'name': 'workManagerInfoJNDIName', 'value': cybcon_was.showAttribute(schedulerID, 'workManagerInfoJNDIName'), 'description': 'Work manager JNDI name', 'tagname': 'workManagerInfoJNDIName'});
+      dataOut({'name': 'useAdminRoles', 'value': cybcon_was.showAttribute(schedulerID, 'useAdminRoles'), 'description': 'Use administration roles', 'tagname': 'useAdminRoles'});
+      dataOut({'tagname': 'SchedulerConfiguration', 'tagtype': '2'});
+    dataOut({'tagname': 'SchedulerConfigurations', 'tagtype': '2'});
+  else:
+    dataOut({'value': "No scheduler provider found on this scope"});
+  dataOut({'tagname': "schedulers", 'tagtype': "2"});
+
+
 #############################################################################
 # MAIN program
 #############################################################################
@@ -3737,6 +3777,7 @@ if CONFIG['general']['cell'] == "true":
   # ----------------------------------------------
   if CONFIG['cell']['CoreGroup'] == "true": get_CoreGroupProperties(cellID);
   dataOut({'description': "Resources (cell level)", 'tagname': "resources", 'tagtype': "1"});
+  if CONFIG['cell']['Schedulers'] == "true": get_Schedulers(cellID);
   if CONFIG['cell']['JMS_provider'] == "true": get_JMSProviderProperties(cellID);
   if CONFIG['cell']['JDBC_provider'] == "true": get_JDBCProviderProperties(cellID);
   if CONFIG['cell']['ResourceAdapter'] == "true": get_ResourceAdapterProperties(cellID);
@@ -3772,6 +3813,7 @@ if CONFIG['general']['cluster'] == "true":
     # ----------------------------------------------
     if CONFIG['cluster']['clusterMembers'] == "true": get_clusterMembers(clusterID);
     dataOut({'description': "Resources (cluster level)", 'tagname': "resources", 'tagtype': "1"});
+    if CONFIG['cluster']['Schedulers'] == "true": get_Schedulers(clusterID);
     if CONFIG['cluster']['JMS_provider'] == "true": get_JMSProviderProperties(clusterID);
     if CONFIG['cluster']['JDBC_provider'] == "true": get_JDBCProviderProperties(clusterID);
     if CONFIG['cluster']['ResourceAdapter'] == "true": get_ResourceAdapterProperties(clusterID);
@@ -3852,6 +3894,7 @@ for nodeName in cybcon_was.get_nodeNames():
     # put in here node specific configurations
     # ----------------------------------------------
     dataOut({'description': "Resources (node level)", 'tagname': "resources", 'tagtype': "1"});
+    if CONFIG['node']['Schedulers'] == "true": get_Schedulers(nodeID);
     if CONFIG['node']['JMS_provider'] == "true": get_JMSProviderProperties(nodeID);
     if CONFIG['node']['JDBC_provider'] == "true": get_JDBCProviderProperties(nodeID);
     if CONFIG['node']['ResourceAdapter'] == "true": get_ResourceAdapterProperties(nodeID);
@@ -3919,6 +3962,7 @@ for nodeName in cybcon_was.get_nodeNames():
         if CONFIG['appserver']['MSGListenerPorts'] == "true": get_MSGListenerServicePropertiesFromServer(serverID, serverName);
         if CONFIG['appserver']['HAManagerService'] == "true": get_HAManagerServiceProperties(serverID);
         dataOut({'description': "Resources (server level)", 'tagname': "resources", 'tagtype': "1"});
+        if CONFIG['appserver']['Schedulers'] == "true": get_Schedulers(serverID);
         if CONFIG['appserver']['JMS_provider'] == "true": get_JMSProviderProperties(serverID);
         if CONFIG['appserver']['JDBC_provider'] == "true": get_JDBCProviderProperties(serverID);
         if CONFIG['appserver']['ResourceAdapter'] == "true": get_ResourceAdapterProperties(serverID);
