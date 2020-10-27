@@ -29,10 +29,10 @@
 # IN THE SOFTWARE.
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 10 $
-#  $LastChangedDate: 2014-03-17 16:35:30 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 12 $
+#  $LastChangedDate: 2014-03-17 16:36:59 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 10 2014-03-17 15:35:30Z cybcon89 $
+#  $Id: config_crawler.py 12 2014-03-17 15:36:59Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.550";
+VERSION="0.555";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -602,6 +602,7 @@ def get_JDBCProviderProperties(objectID):
             dataOut({'name': "reapTime", 'value': cybcon_was.showAttribute(DataSourceCP, 'reapTime'), 'unit': "seconds", 'description': "Reap time", 'tagname': "reaptime"});
             dataOut({'name': "unusedTimeout", 'value': cybcon_was.showAttribute(DataSourceCP, 'unusedTimeout'), 'unit': "seconds", 'description': "Unused timeout", 'tagname': "unusedtimeout"});
             dataOut({'name': "agedTimeout", 'value': cybcon_was.showAttribute(DataSourceCP, 'agedTimeout'), 'unit': "seconds", 'description': "Aged timeout", 'tagname': "agedtimeout"});
+            dataOut({'name': "purgePolicy", 'value': cybcon_was.showAttribute(DataSourceCP, 'apurgePolicy'), 'description': "Purge policy", 'tagname': "purgePolicy"});
             dataOut({'description': "Advanced connection pool properties", 'tagname': "advancedconnectionpoolproperties", 'tagtype': "1"});
             dataOut({'name': "numberOfSharedPoolPartitions", 'value': cybcon_was.showAttribute(DataSourceCP, 'numberOfSharedPoolPartitions'), 'description': "Number of shared partitions", 'tagname': "numberOfSharedPoolPartitions"});
             dataOut({'name': "numberOfFreePoolPartitions", 'value': cybcon_was.showAttribute(DataSourceCP, 'numberOfFreePoolPartitions'), 'description': "Number of free pool partitions", 'tagname': "numberOfFreePoolPartitions"});
@@ -958,22 +959,17 @@ def get_securityProperties(cellName):
   # define possible certificate attributes to scan for and their description
   certAttributeList=['alias', 'version', 'size', 'serialNumber', 'issuedTo', 'issuedBy', 'fingerPrint', 'signatureAlgorithm', 'validity' ];
 
+  # check if server supports AdminTask.listKeyStores()
   try:
-    # check if server supports AdminTask.listKeyStores()
     dummy = AdminTask.listKeyStores();
     del dummy;
-    # check for all available KeyStores on cell scope
-    myScopedKeyStores = [];
-    myTempKeyHash = {};
-    myTempKeyHash['scope'] = '(cell):' + cellName;
-    myOverallKeyStores = AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator);
-    myTempKeyHash['keystores'] = AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator);
-    if len(myTempKeyHash['keystores']) >= 1: myScopedKeyStores.append(myTempKeyHash);
 
-    # check for all available KeyStores on node scope
-    for NN in cybcon_was.get_nodeNames():
+    # check for all available KeyStores on all management scopes
+    myScopedKeyStores = [];
+    myOverallKeyStores = [];
+    for certScope in AdminTask.listManagementScopes().split(lineSeparator):
       myTempKeyHash = {};
-      myTempKeyHash['scope'] = '(cell):' + cellName + ':(node):' + NN;
+      myTempKeyHash['scope'] = certScope.replace("scopeName:", "").strip();
       myTempKeyHash['keystores'] = [];
       for keyStoreID in AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator):
         if keyStoreID != "" and cybcon_was.find_valueInArray(keyStoreID, myOverallKeyStores) != 'true':
@@ -999,7 +995,10 @@ def get_securityProperties(cellName):
         dataOut({'name': "useForAcceleration", 'value': cybcon_was.showAttribute(keyStoreID, 'useForAcceleration'), 'description': "Enable cryptographic operations on hardware device", 'tagname': "useForAcceleration"});
 
         dataOut({'description': "Signer certificates", 'tagname': "signercertificates", 'tagtype': "1"});
-        for signerCert in AdminTask.listSignerCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]).split(lineSeparator):
+        listCertError='false';
+        # skip errors while reading keystore (e.g. keystore file not exist)
+        signerCertificates = AdminTask.listSignerCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
+        for signerCert in signerCertificates.split(lineSeparator):
           if signerCert != "":
             signerCert = signerCert.replace("[[", "").replace("] ]", "");
             # generate empty certificate dictionary
@@ -1034,7 +1033,9 @@ def get_securityProperties(cellName):
         dataOut({'tagname': "signercertificates", 'tagtype': "2"});
 
         dataOut({'description': "Personal certificates", 'tagname': "personalcertificates", 'tagtype': "1"});
-        for personalCert in AdminTask.listPersonalCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]).split(lineSeparator):
+        # skip errors while reading keystore (e.g. keystore file not exist)
+        personalCertificates = AdminTask.listPersonalCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
+        for personalCert in personalCertificates.split(lineSeparator):
           if personalCert != "":
             personalCert = personalCert.replace("[[", "").replace("] ]", "");
             # generate empty certificate dictionary
@@ -1049,7 +1050,7 @@ def get_securityProperties(cellName):
                 if personalCertAttrib[:certAtLen].find(certAttribute) != -1:
                   certDict[certAttribute] = personalCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
                   continue;
-            #output certificate informations:
+            #output certificat informations:
             if certDict['alias'] != "":
               dataOut({'tagname': "certificate", 'tagtype': "1"});
               dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
@@ -1068,9 +1069,13 @@ def get_securityProperties(cellName):
             dataOut({'value': "No personal certificate exist in keystore."});
         dataOut({'tagname': "personalcertificates", 'tagtype': "2"});
 
-      dataOut({'tagname': "keystore", 'tagtype': "2"});
+        dataOut({'tagname': "keystore", 'tagtype': "2"});
   except AttributeError:
     dataOut({'description': "WARNING", 'value': "The Server not supports AdminTask.listKeyStores().", 'tagname': "WARNING"});
+    pass;
+  except:
+    dataOut({'description': "ERROR", 'value': "Exception raised while executing AdminTask function to list certificates", 'tagname': "ERROR"});
+    pass;
 
   dataOut({'tagname': "keystoresandcerts", 'tagtype': "2"});
 
@@ -1377,8 +1382,15 @@ def get_appServerProperties(serverID, serverName):
   dataOut({'description': "Transaction Service", 'tagname': "transactionservice", 'tagtype': "1"});
   trsvID = AdminConfig.list('TransactionService', serverID);
   dataOut({'name': "totalTranLifetimeTimeout", 'value': cybcon_was.showAttribute(trsvID, 'totalTranLifetimeTimeout'), 'unit': "seconds", 'description': "Total transaction lifetime timeout", 'tagname': "totalTranLifetimeTimeout"});
+  dataOut({'name': "asyncResponseTimeout", 'value': cybcon_was.showAttribute(trsvID, 'asyncResponseTimeout'), 'unit': "seconds", 'description': "Async response timeout", 'tagname': "asyncResponseTimeout"});
   dataOut({'name': "clientInactivityTimeout", 'value': cybcon_was.showAttribute(trsvID, 'clientInactivityTimeout'), 'unit': "seconds", 'description': "Client inactivity timeout", 'tagname': "clientInactivityTimeout"});
   dataOut({'name': "propogatedOrBMTTranLifetimeTimeout", 'value': cybcon_was.showAttribute(trsvID, 'propogatedOrBMTTranLifetimeTimeout'), 'unit': "seconds", 'description': "Maximum transaction timeout", 'tagname': "propogatedOrBMTTranLifetimeTimeout"});
+  dataOut({'name': "heuristicRetryLimit", 'value': cybcon_was.showAttribute(trsvID, 'heuristicRetryLimit'), 'unit': "retries", 'description': "Heuristic retry limit", 'tagname': "heuristicRetryLimit"});
+  dataOut({'name': "heuristicRetryWait", 'value': cybcon_was.showAttribute(trsvID, 'heuristicRetryWait'), 'unit': "seconds", 'description': "Heuristic retry wait", 'tagname': "heuristicRetryWait"});
+  dataOut({'name': "enableLoggingForHeuristicReporting", 'value': cybcon_was.showAttribute(trsvID, 'enableLoggingForHeuristicReporting'), 'description': "Enable logging for heuristic reporting", 'tagname': "enableLoggingForHeuristicReporting"});
+  dataOut({'name': "LPSHeuristicCompletion", 'value': cybcon_was.showAttribute(trsvID, 'LPSHeuristicCompletion'), 'description': "Heuristic completion direction", 'tagname': "LPSHeuristicCompletion"});
+  dataOut({'name': "enableFileLocking", 'value': cybcon_was.showAttribute(trsvID, 'enableFileLocking'), 'description': "Enable file locking", 'tagname': "enableFileLocking"});
+  dataOut({'name': "enableProtocolSecurity", 'value': cybcon_was.showAttribute(trsvID, 'enableProtocolSecurity'), 'description': "Enable protocol security", 'tagname': "enableProtocolSecurity"});
   dataOut({'tagname': "transactionservice", 'tagtype': "2"});
 
   dataOut({'description': "Dynamic Cache Service", 'tagname': "dynamiccacheservice", 'tagtype': "1"});
@@ -1954,46 +1966,49 @@ def get_serviceProviders():
           dataOut({'description': "Policy set attachments", 'tagname': "policysetattachments", 'tagtype': "1"});
 
           # loop over Policy set attachments for the given webservice
-          for psa in AdminTask.getPolicySetAttachments('[-applicationName ' + wsDict['application'] + ' -attachmentType application -expandResources ' + wsDict['service'] + ']').split(lineSeparator):
-            if psa != "":
-              psa = psa.replace("[ [", "").replace("] ]", "");
-              # generate empty policy set attachment dictionary
-              psaDict = {};
-              for psaAttribute in psaAttrList:
-                psaDict[psaAttribute] = "";
-
-              # loop over attribute lines
-              for psaAtVal in psa.split('] ['):
+          if wsDict['application'] != "":
+            for psa in AdminTask.getPolicySetAttachments('[-applicationName ' + wsDict['application'] + ' -attachmentType application -expandResources ' + wsDict['service'] + ']').split(lineSeparator):
+              if psa != "":
+                psa = psa.replace("[ [", "").replace("] ]", "");
+                # generate empty policy set attachment dictionary
+                psaDict = {};
                 for psaAttribute in psaAttrList:
-                  psaAtLen=len(psaAttribute);
-                  if psaAtVal[:psaAtLen].find(psaAttribute) != -1:
-                    psaDict[psaAttribute] = psaAtVal[psaAtLen:].replace('[', "").replace(']', "").strip();
-                    continue;
+                  psaDict[psaAttribute] = "";
 
-              #output informations:
-              if psaDict['resource'] != "":
-                dataOut({'tagname': "policysetattachment", 'tagtype': "1"});
-                #res=psaDict['resource'].split('}')[-1].split('/')[-1];
-                res=psaDict['resource'].split('}')[-1];
-                dataOut({'name': 'resource', 'value': res, 'description': 'Service/Endpoint/Operation', 'tagname': 'resource'});
-                #if psaDict['policySet'] == "": psaDict['policySet'] = "None";
-                dataOut({'name': 'policySet', 'value': psaDict['policySet'], 'description': 'Attached policy set', 'tagname': 'policySet'});
-                #if psaDict['binding'] == "": psaDict['binding'] = "Not applicable";
-                dataOut({'name': 'binding', 'value': psaDict['binding'], 'description': 'Binding', 'tagname': 'binding'});
-                #if psaDict['directAttachment'] == "true":
-                #  dataOut({'description': 'Binding policies', 'tagname': "bindingpolicies", 'tagtype': "1"});
-                #  for policyType in AdminTask.listPolicyTypes('[-bindingLocation "[ [application ' + wsDict['application'] + '] [attachmentId ' + psaDict['attachmentId'] + '] ]" -attachmentType application]'):
-                #    dataOut({'tagname': "bindingpolicy", 'tagtype': "1"});
-                #    dataOut({'name': 'policyType', 'value': policyType, 'description': 'Policy', 'tagname': 'policyType'});
-                #    dataOut({'tagname': "bindingpolicy", 'tagtype': "2"});
-                #  dataOut({'tagname': "bindingpolicies", 'tagtype': "2"});
-                #dataOut({'name': 'directAttachment', 'value': psaDict['directAttachment'], 'description': 'Direct Attachment', 'tagname': 'directAttachment'});
-                #dataOut({'name': 'attachmentId', 'value': psaDict['attachmentId'], 'description': 'Attachment ID', 'tagname': 'attachmentId'});
-                dataOut({'tagname': "policysetattachment", 'tagtype': "2"});
+                # loop over attribute lines
+                for psaAtVal in psa.split('] ['):
+                  for psaAttribute in psaAttrList:
+                    psaAtLen=len(psaAttribute);
+                    if psaAtVal[:psaAtLen].find(psaAttribute) != -1:
+                      psaDict[psaAttribute] = psaAtVal[psaAtLen:].replace('[', "").replace(']', "").strip();
+                      continue;
+  
+                #output informations:
+                if psaDict['resource'] != "":
+                  dataOut({'tagname': "policysetattachment", 'tagtype': "1"});
+                  #res=psaDict['resource'].split('}')[-1].split('/')[-1];
+                  res=psaDict['resource'].split('}')[-1];
+                  dataOut({'name': 'resource', 'value': res, 'description': 'Service/Endpoint/Operation', 'tagname': 'resource'});
+                  #if psaDict['policySet'] == "": psaDict['policySet'] = "None";
+                  dataOut({'name': 'policySet', 'value': psaDict['policySet'], 'description': 'Attached policy set', 'tagname': 'policySet'});
+                  #if psaDict['binding'] == "": psaDict['binding'] = "Not applicable";
+                  dataOut({'name': 'binding', 'value': psaDict['binding'], 'description': 'Binding', 'tagname': 'binding'});
+                  #if psaDict['directAttachment'] == "true":
+                  #  dataOut({'description': 'Binding policies', 'tagname': "bindingpolicies", 'tagtype': "1"});
+                  #  for policyType in AdminTask.listPolicyTypes('[-bindingLocation "[ [application ' + wsDict['application'] + '] [attachmentId ' + psaDict['attachmentId'] + '] ]" -attachmentType application]'):
+                  #    dataOut({'tagname': "bindingpolicy", 'tagtype': "1"});
+                  #    dataOut({'name': 'policyType', 'value': policyType, 'description': 'Policy', 'tagname': 'policyType'});
+                  #    dataOut({'tagname': "bindingpolicy", 'tagtype': "2"});
+                  #  dataOut({'tagname': "bindingpolicies", 'tagtype': "2"});
+                  #dataOut({'name': 'directAttachment', 'value': psaDict['directAttachment'], 'description': 'Direct Attachment', 'tagname': 'directAttachment'});
+                  #dataOut({'name': 'attachmentId', 'value': psaDict['attachmentId'], 'description': 'Attachment ID', 'tagname': 'attachmentId'});
+                  dataOut({'tagname': "policysetattachment", 'tagtype': "2"});
+                else:
+                  dataOut({'value': "No policy set attachment in webservice."});
               else:
                 dataOut({'value': "No policy set attachment in webservice."});
             else:
-              dataOut({'value': "No policy set attachment in webservice."});
+              dataOut({'value': "No application available to have policy set attachments in webservice."});
           dataOut({'tagname': "policysetattachments", 'tagtype': "2"});
           dataOut({'tagname': "serviceprovider", 'tagtype': "2"});
         else:
@@ -2627,7 +2642,7 @@ if CYBCON_WAS_VERSION < CONFIG['cybcon_was']['minVersion']:
 #----------------------------------------------------------------------------
 # MAIN Operations
 #----------------------------------------------------------------------------
-
+startTime = time.time();
 if CONFIG['general']['output_format'] == "xml": print "<?xml version='1.0' encoding='iso-8859-1'?>";
 dataOut({'tagname': "configcrawler", 'tagtype': "1"});
 dataOut({'tagname': "head", 'tagtype': "1"});
@@ -2852,5 +2867,8 @@ if CONFIG['general']['cell'] == "true": dataOut({'tagname': "cell", 'tagtype': "
 dataOut({'tagname': "configuration", 'tagtype': "2"});
 dataOut({'tagname': "foot", 'tagtype': "1"});
 dataOut({'tagname': "meta", 'name': "date", 'value': time.strftime("%Y-%m-%d %H:%M:%S"), 'description': "WebSphere configuration crawler ends successfully at", 'tagtype': "3"});
+endTime = time.time();
+elapsedTime = str("%.2f" % (endTime - startTime));
+dataOut({'tagname': "meta", 'name': "elapsedTime", 'value': elapsedTime, 'unit': "seconds", 'description': "Script runtime", 'tagtype': "3"});
 dataOut({'tagname': "foot", 'tagtype': "2"});
 dataOut({'tagname': "configcrawler", 'tagtype': "2"});
