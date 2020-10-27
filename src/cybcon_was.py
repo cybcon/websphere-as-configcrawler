@@ -30,17 +30,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 32 $
-#  $LastChangedDate: 2014-03-18 10:32:22 +0100 (Tue, 18 Mar 2014) $
+#  $Revision: 41 $
+#  $LastChangedDate: 2014-04-01 13:42:56 +0200 (Tue, 01 Apr 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 32 2014-03-18 09:32:22Z cybcon89 $
+#  $Id: cybcon_was.py 41 2014-04-01 11:42:56Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.030";                       # version of this library
+cybcon_was_lib_version="1.031";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -641,6 +641,7 @@ def parse_adminAppView(appName, option, identifier):
           if line.find(identifier) != -1:
             AppInf.append({});                # initialize next dictionary
             AppInfIndex=len(AppInf) - 1;      # get index of array
+          if line.find(':') == -1: continue;  # skip attribute value pair if there is no delimiter
           att, val = line.split(":",1);       # split the line in attribute and value pair
           att=att.strip();                    # remove leading and trailing whitespaces from attribute
           val=val.strip();                    # remove leading and trailing whitespaces from value

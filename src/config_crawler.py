@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 39 $
-#  $LastChangedDate: 2014-03-28 10:14:46 +0100 (Fri, 28 Mar 2014) $
+#  $Revision: 41 $
+#  $LastChangedDate: 2014-04-01 13:42:56 +0200 (Tue, 01 Apr 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 39 2014-03-28 09:14:46Z cybcon89 $
+#  $Id: config_crawler.py 41 2014-04-01 11:42:56Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.604";
+VERSION="0.605";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -144,7 +144,7 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.030";
+  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.031";
 
 # give configuration object back
   return configHash;
