@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 14 $
-#  $LastChangedDate: 2014-03-17 16:37:52 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 16 $
+#  $LastChangedDate: 2014-03-17 16:38:31 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 14 2014-03-17 15:37:52Z cybcon89 $
+#  $Id: config_crawler.py 16 2014-03-17 15:38:31Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.560";
+VERSION="0.561";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -2377,7 +2377,7 @@ def get_enterpriseApplicationSessionManagement(deplObjectID):
   if deplObjectConfigID != "":
     sessionManagementID=cybcon_was.showAttribute(deplObjectConfigID, 'sessionManagement');
     if sessionManagementID != "":
-      dataOut({'name': 'Overridesessionmanagement', 'value': 'true', 'description': "Override session management", 'tagname': 'Overridesessionmanagement'});
+      dataOut({'name': 'enable', 'value': cybcon_was.showAttribute(sessionManagementID, 'enable'), 'description': "Override session management", 'tagname': 'enable'});
       dataOut({'name': 'enableSSLTracking', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableSSLTracking'), 'description': 'Enable SSL ID tracking', 'tagname': 'enableSSLTracking'});
       dataOut({'name': 'enableCookies', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableCookies'), 'description': 'Enable cookies', 'tagname': 'enableCookies'});
       defaultCookieSettingsID = cybcon_was.showAttribute(sessionManagementID, 'defaultCookieSettings');
