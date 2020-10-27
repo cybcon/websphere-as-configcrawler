@@ -7,17 +7,17 @@
 # (C) Copyright by Cybcon Industries 2009
 # Library can be downloaded at: http://www.cybcon-industries.de/
 #---------------------------------------------------------------------
-#  $Revision: 14 $
-#  $LastChangedDate: 2014-03-17 16:37:52 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 20 $
+#  $LastChangedDate: 2014-03-17 16:43:09 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 14 2014-03-17 15:37:52Z cybcon89 $
+#  $Id: cybcon_was.py 20 2014-03-17 15:43:09Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.010";                       # version of this library
+cybcon_was_lib_version="1.021";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -218,6 +218,31 @@ def get_ObjectScopeByID(objectID):
   if objectScope.find("/servers/") != -1: return "Server";
   if objectScope.find("/nodes/") != -1: return "Node";
   return "Cell";
+
+#----------------------------------------------------------------------------
+# get_nodeNameByServerID
+#   description: get the serverID and return the nodeNAme on which the server
+#     is scoped
+#   input: serverID
+#   return: nodeName | NULL
+#----------------------------------------------------------------------------
+def get_nodeNameByServerID(serverID):
+  # check if serverID is given to function, return nothing it it is not
+  if serverID == "": return "";
+
+  # get cellName
+  cellName = AdminControl.getCell();
+  # get serverName
+  serverName = showAttribute(serverID, 'name');
+  # loop over nodes
+  for nodeName in get_nodeNames():
+    # try to get the serverID on the node
+    serverIDperNode = AdminConfig.getid('/Cell:' + cellName + '/Node:' + nodeName + '/Server:' + serverName + '/');
+    # return if the generated serverID is the same as the given serverID
+    if serverIDperNode == serverID: return nodeName;
+
+  # return NULL
+  return "";
 
 #----------------------------------------------------------------------------
 # parse_mbean
@@ -467,20 +492,14 @@ def get_applicationIDByName(appName):
   # return empty string if application name is not given to function
   if appName == "": return "";
 
-  # get cell
-  cellName = AdminControl.getCell();
-  cellID = AdminConfig.getid('/Cell:' + cellName + '/');
+  # get application deployment
+  deployments = AdminConfig.getid('/Deployment:' + appName + '/');
+  if deployments == "": return "";
 
-  # loop over all applications installed on the system
-  for appID in AdminConfig.list('ApplicationDeployment', cellID).split(lineSeparator):
-    # extract the application name from the attribute "appContextIDForSecurity"
-    appNameFromID = showAttribute(appID, 'appContextIDForSecurity').split("/")[-1];
-
-    # compare application name with given application name, return objectID on first match
-    if appName == appNameFromID: return appID;
-
-  # no object found for that name - return empty string
-  return "";
+  # get the application object off the deployment
+  deploymentObject = showAttribute(deployments, 'deployedObject');
+  if deploymentObject == "": return "";
+  else: return deploymentObject;
 
 #----------------------------------------------------------------------------
 # get_applicationTargetServerNames
@@ -847,6 +866,7 @@ cybcon_was - Cybcon Industries simple python/jython WebSphere functions library
  S_RC = cybcon_was.find_valueInArray(value, array);
  S_objectType = cybcon_was.get_ObjectTypeByID(objectID);
  S_objectScope = cybcon_was.get_ObjectScopeByID(objectID);
+
  D_MBean = cybcon_was.parse_mbean(mbean);
 
  # functions to get informations about the WebSphere Infrastructure
@@ -854,6 +874,7 @@ cybcon_was - Cybcon Industries simple python/jython WebSphere functions library
  S_value = cybcon_was.showAttribute(objectID, attribute);
  A_values = cybcon_was.splitArray(string);
  A_nodeNames cybcon_was.get_nodeNames();
+ S_nodeName = cybcon_was.get_nodeNameByServerID(serverID);
  nodeAgentID = cybcon_was.get_nodeAgentID(nodeName);
  A_clusterNames = cybcon_was.get_clusterNames();
  A_serverNames = cybcon_was.get_clusterMemberNames(clusterName);
@@ -1001,6 +1022,12 @@ the function cybcon_was.splitArray(string) splits into:
 =item B<cybcon_was.get_nodeNames()>
 
 The functions returns an array of names of all nodes in the WebSphere cell.
+
+=item B<cybcon_was..get_nodeNameByServerID(serverID)>
+
+If you give that function a serverID, it tries to identify the node on which that server
+is configured.
+The function returns the serverName.
 
 =item B<cybcon_was.get_nodeAgentID(nodeName)>
 

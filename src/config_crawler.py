@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 16 $
-#  $LastChangedDate: 2014-03-17 16:38:31 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 20 $
+#  $LastChangedDate: 2014-03-17 16:43:09 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 16 2014-03-17 15:38:31Z cybcon89 $
+#  $Id: config_crawler.py 20 2014-03-17 15:43:09Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.561";
+VERSION="0.576";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -143,7 +143,7 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.003";
+  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.021";
 
 # give configuration object back
   return configHash;
@@ -363,12 +363,19 @@ def get_JMSProviderProperties(objectID):
   # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 
   #-----------------------
   # Default messaging provider
   dataOut({'description': "Default messaging provider", 'tagname': "defaultmessaging", 'tagtype': "1"});
   #JMSProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/JMSProvider:WebSphere JMS Provider/');
   JMSProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/J2CResourceAdapter:SIB JMS Resource Adapter/');
+  #JMSProviderID="";
+  #for JMSProviderID_tmp in AdminConfig.list('J2CResourceAdapter', objectID).split(lineSeparator):
+  #  if cybcon_was.showAttribute(JMSProviderID_tmp, 'name') == "SIB JMS Resource Adapter":
+  #    JMSProviderID=JMSProviderID_tmp;
   if JMSProviderID != "":
     dataOut({'description': "Queue connection factories", 'tagname': "queueconnectionfactories", 'tagtype': "1"});
     for QCF in AdminConfig.list('J2CConnectionFactory', JMSProviderID).split(lineSeparator):
@@ -476,6 +483,10 @@ def get_JMSProviderProperties(objectID):
   # WebSphere MQ messaging provider
   dataOut({'description': "WebSphere MQ", 'tagname': "webspheremq", 'tagtype': "1"});
   JMSProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/JMSProvider:WebSphere MQ JMS Provider/');
+  #JMSProviderID="";
+  #for JMSProviderID_tmp in AdminConfig.list('JMSProvider', objectID).split(lineSeparator):
+  #  if cybcon_was.showAttribute(JMSProviderID_tmp, 'name') == "WebSphere MQ JMS Provider":
+  #    JMSProviderID=JMSProviderID_tmp;
   if JMSProviderID != "":
     dataOut({'description': "WebSphere MQ queue connection factories", 'tagname': "mqqueueconnectionfactories", 'tagtype': "1"});
     for MQQCF in AdminConfig.list('MQQueueConnectionFactory', JMSProviderID).split(lineSeparator):
@@ -571,6 +582,9 @@ def get_JDBCProviderProperties(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 # get IDs, searching by scope, and type
   for JDBCProvider in AdminConfig.getid('/' + objectType + ':' + objectName + '/JDBCProvider:/').split(lineSeparator):
     if JDBCProvider != "":
@@ -655,6 +669,9 @@ def get_ResourceAdapterProperties(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 # get IDs, searching by scope, and type
   for RA in AdminConfig.getid('/' + objectType + ':' + objectName + '/J2CResourceAdapter:/').split(lineSeparator):
     if RA != "":
@@ -735,6 +752,9 @@ def get_URLProviderProperties(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 # get IDs, searching by scope, and type
   for URLproviderID in AdminConfig.getid('/' + objectType + ':' + objectName + '/URLProvider:/').split(lineSeparator):
     if URLproviderID != "":
@@ -774,6 +794,9 @@ def get_ResourceEnvironmentProperties(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 
   dataOut({'description': "Resource Environment Providers", 'tagname': "resourceenvironmentproviders", 'tagtype': "1"});
   for ResEnvProvID in AdminConfig.getid('/' + objectType + ':' + objectName + '/ResourceEnvironmentProvider:/').split(lineSeparator):
@@ -846,6 +869,9 @@ def get_MailProviderProperties(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 # get IDs, searching by scope, and type
   for MailproviderID in AdminConfig.getid('/' + objectType + ':' + objectName + '/MailProvider:/').split(lineSeparator):
     if MailproviderID != "":
@@ -960,9 +986,6 @@ def get_securityProperties(cellName):
 
   # check if server supports AdminTask.listKeyStores()
   try:
-    dummy = AdminTask.listKeyStores();
-    del dummy;
-
     # check for all available KeyStores on all management scopes
     myScopedKeyStores = [];
     myOverallKeyStores = [];
@@ -993,87 +1016,15 @@ def get_securityProperties(cellName):
         dataOut({'name': "initializeAtStartup", 'value': cybcon_was.showAttribute(keyStoreID, 'initializeAtStartup'), 'description': "Initialize at startup", 'tagname': "initializeAtStartup"});
         dataOut({'name': "useForAcceleration", 'value': cybcon_was.showAttribute(keyStoreID, 'useForAcceleration'), 'description': "Enable cryptographic operations on hardware device", 'tagname': "useForAcceleration"});
 
-        dataOut({'description': "Signer certificates", 'tagname': "signercertificates", 'tagtype': "1"});
-        listCertError='false';
-        # skip errors while reading keystore (e.g. keystore file not exist)
-        signerCertificates = AdminTask.listSignerCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
-        for signerCert in signerCertificates.split(lineSeparator):
-          if signerCert != "":
-            signerCert = signerCert.replace("[[", "").replace("] ]", "");
-            # generate empty certificate dictionary
-            certDict = {};
-            for certAttribute in certAttributeList:
-              certDict[certAttribute] = "";
-            # loop over attribute lines
-            for signerCertAttrib in signerCert.split('] ['):
-              # loop over possible certificate attributes and scan line for the attributes
-              for certAttribute in certAttributeList:
-                certAtLen=len(certAttribute);
-                if signerCertAttrib[:certAtLen].find(certAttribute) != -1:
-                  certDict[certAttribute] = signerCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
-                  continue;
-            #output certificate informations:
-            if certDict['alias'] != "":
-              dataOut({'tagname': "certificate", 'tagtype': "1"});
-              dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
-              dataOut({'name': 'version', 'value': certDict['version'], 'description': 'Version', 'tagname': 'version'});
-              dataOut({'name': 'size', 'value': certDict['size'], 'description': 'Key size', 'unit': 'bits', 'tagname': 'size'});
-              dataOut({'name': 'serialNumber', 'value': certDict['serialNumber'], 'description': 'Serial number', 'tagname': 'serialNumber'});
-              dataOut({'name': 'validity', 'value': certDict['validity'], 'description': 'Validity period', 'tagname': 'validity'});
-              dataOut({'name': 'issuedTo', 'value': certDict['issuedTo'], 'description': 'Issued to', 'tagname': 'issuedTo'});
-              dataOut({'name': 'issuedBy', 'value': certDict['issuedBy'], 'description': 'Issued by', 'tagname': 'issuedBy'});
-              dataOut({'name': 'fingerPrint', 'value': certDict['fingerPrint'], 'description': 'Fingerprint (SHA digest)', 'tagname': 'fingerPrint'});
-              dataOut({'name': 'signatureAlgorithm', 'value': certDict['signatureAlgorithm'], 'description': 'Signature algorithm', 'tagname': 'signatureAlgorithm'});
-              dataOut({'tagname': "certificate", 'tagtype': "2"});
-            else:
-              dataOut({'value': "No signer certificate exist in keystore."});
-          else:
-            dataOut({'value': "No signer certificate exist in keystore."});
-        dataOut({'tagname': "signercertificates", 'tagtype': "2"});
+        # get the signer certificates from keystore
+        get_signerCertificates(myKeyStoreHash);
 
-        dataOut({'description': "Personal certificates", 'tagname': "personalcertificates", 'tagtype': "1"});
-        # skip errors while reading keystore (e.g. keystore file not exist)
-        personalCertificates = AdminTask.listPersonalCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
-        for personalCert in personalCertificates.split(lineSeparator):
-          if personalCert != "":
-            personalCert = personalCert.replace("[[", "").replace("] ]", "");
-            # generate empty certificate dictionary
-            certDict = {};
-            for certAttribute in certAttributeList:
-              certDict[certAttribute] = "";
-            # loop over attribute lines
-            for personalCertAttrib in personalCert.split('] ['):
-              # loop over possible certificate attributes and scan line for the attributes
-              for certAttribute in certAttributeList:
-                certAtLen=len(certAttribute);
-                if personalCertAttrib[:certAtLen].find(certAttribute) != -1:
-                  certDict[certAttribute] = personalCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
-                  continue;
-            #output certificat informations:
-            if certDict['alias'] != "":
-              dataOut({'tagname': "certificate", 'tagtype': "1"});
-              dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
-              dataOut({'name': 'version', 'value': certDict['version'], 'description': 'Version', 'tagname': 'version'});
-              dataOut({'name': 'size', 'value': certDict['size'], 'description': 'Key size', 'unit': 'bits', 'tagname': 'size'});
-              dataOut({'name': 'serialNumber', 'value': certDict['serialNumber'], 'description': 'Serial number', 'tagname': 'serialNumber'});
-              dataOut({'name': 'validity', 'value': certDict['validity'], 'description': 'Validity period', 'tagname': 'validity'});
-              dataOut({'name': 'issuedTo', 'value': certDict['issuedTo'], 'description': 'Issued to', 'tagname': 'issuedTo'});
-              dataOut({'name': 'issuedBy', 'value': certDict['issuedBy'], 'description': 'Issued by', 'tagname': 'issuedBy'});
-              dataOut({'name': 'fingerPrint', 'value': certDict['fingerPrint'], 'description': 'Fingerprint (SHA digest)', 'tagname': 'fingerPrint'});
-              dataOut({'name': 'signatureAlgorithm', 'value': certDict['signatureAlgorithm'], 'description': 'Signature algorithm', 'tagname': 'signatureAlgorithm'});
-              dataOut({'tagname': "certificate", 'tagtype': "2"});
-            else:
-              dataOut({'value': "No personal certificate exist in keystore."});
-          else:
-            dataOut({'value': "No personal certificate exist in keystore."});
-        dataOut({'tagname': "personalcertificates", 'tagtype': "2"});
+        # get the personal certificates from keystore
+        get_personalCertificates(myKeyStoreHash);
 
         dataOut({'tagname': "keystore", 'tagtype': "2"});
   except AttributeError:
     dataOut({'description': "WARNING", 'value': "The Server not supports AdminTask.listKeyStores().", 'tagname': "WARNING"});
-    pass;
-  except:
-    dataOut({'description': "ERROR", 'value': "Exception raised while executing AdminTask function to list certificates", 'tagname': "ERROR"});
     pass;
 
   dataOut({'tagname': "keystoresandcerts", 'tagtype': "2"});
@@ -1089,6 +1040,105 @@ def get_securityProperties(cellName):
   dataOut({'tagname': "keysetgroups", 'tagtype': "2"});
   dataOut({'tagname': "sslcertificateandkeymanagement", 'tagtype': "2"});
   dataOut({'tagname': "security", 'tagtype': "2"});
+
+
+#----------------------------------------------------------------------------
+# get_signerCertificates
+#   description: output the signer certificates from a given keystore
+#   input: dictionary KeyStore
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_signerCertificates(myKeyStoreHash):
+  dataOut({'description': "Signer certificates", 'tagname': "signercertificates", 'tagtype': "1"});
+  # skip errors while reading keystore (e.g. keystore file not exist)
+  try:
+    signerCertificates = AdminTask.listSignerCertificates(['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
+    for signerCert in signerCertificates.split(lineSeparator):
+      if signerCert != "":
+        signerCert = signerCert.replace("[[", "").replace("] ]", "");
+        # generate empty certificate dictionary
+        certDict = {};
+        for certAttribute in certAttributeList:
+          certDict[certAttribute] = "";
+        # loop over attribute lines
+        for signerCertAttrib in signerCert.split('] ['):
+          # loop over possible certificate attributes and scan line for the attributes
+          for certAttribute in certAttributeList:
+            certAtLen=len(certAttribute);
+            if signerCertAttrib[:certAtLen].find(certAttribute) != -1:
+              certDict[certAttribute] = signerCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
+              continue;
+        #output certificate informations:
+        if certDict['alias'] != "":
+          dataOut({'tagname': "certificate", 'tagtype': "1"});
+          dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
+          dataOut({'name': 'version', 'value': certDict['version'], 'description': 'Version', 'tagname': 'version'});
+          dataOut({'name': 'size', 'value': certDict['size'], 'description': 'Key size', 'unit': 'bits', 'tagname': 'size'});
+          dataOut({'name': 'serialNumber', 'value': certDict['serialNumber'], 'description': 'Serial number', 'tagname': 'serialNumber'});
+          dataOut({'name': 'validity', 'value': certDict['validity'], 'description': 'Validity period', 'tagname': 'validity'});
+          dataOut({'name': 'issuedTo', 'value': certDict['issuedTo'], 'description': 'Issued to', 'tagname': 'issuedTo'});
+          dataOut({'name': 'issuedBy', 'value': certDict['issuedBy'], 'description': 'Issued by', 'tagname': 'issuedBy'});
+          dataOut({'name': 'fingerPrint', 'value': certDict['fingerPrint'], 'description': 'Fingerprint (SHA digest)', 'tagname': 'fingerPrint'});
+          dataOut({'name': 'signatureAlgorithm', 'value': certDict['signatureAlgorithm'], 'description': 'Signature algorithm', 'tagname': 'signatureAlgorithm'});
+          dataOut({'tagname': "certificate", 'tagtype': "2"});
+        else:
+          dataOut({'value': "No signer certificate exist in keystore."});
+      else:
+        dataOut({'value': "No signer certificate exist in keystore."});
+  except:
+    dataOut({'description': "ERROR", 'value': "Exception raised while executing AdminTask.listSignerCertificates() to list certificates", 'tagname': "ERROR"});
+    pass;
+  dataOut({'tagname': "signercertificates", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_personalCertificates
+#   description: output the personal certificates from a given keystore
+#   input: dictionary KeyStore
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_personalCertificates(myKeyStoreHash):
+  dataOut({'description': "Personal certificates", 'tagname': "personalcertificates", 'tagtype': "1"});
+  # skip errors while reading keystore (e.g. keystore file not exist)
+  try:
+    personalCertificates = AdminTask.listPersonalCertificates(['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
+    for personalCert in personalCertificates.split(lineSeparator):
+      if personalCert != "":
+        personalCert = personalCert.replace("[[", "").replace("] ]", "");
+        # generate empty certificate dictionary
+        certDict = {};
+        for certAttribute in certAttributeList:
+          certDict[certAttribute] = "";
+        # loop over attribute lines
+        for personalCertAttrib in personalCert.split('] ['):
+          # loop over possible certificate attributes and scan line for the attributes
+          for certAttribute in certAttributeList:
+            certAtLen=len(certAttribute);
+            if personalCertAttrib[:certAtLen].find(certAttribute) != -1:
+              certDict[certAttribute] = personalCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
+              continue;
+        #output certificat informations:
+        if certDict['alias'] != "":
+          dataOut({'tagname': "certificate", 'tagtype': "1"});
+          dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
+          dataOut({'name': 'version', 'value': certDict['version'], 'description': 'Version', 'tagname': 'version'});
+          dataOut({'name': 'size', 'value': certDict['size'], 'description': 'Key size', 'unit': 'bits', 'tagname': 'size'});
+          dataOut({'name': 'serialNumber', 'value': certDict['serialNumber'], 'description': 'Serial number', 'tagname': 'serialNumber'});
+          dataOut({'name': 'validity', 'value': certDict['validity'], 'description': 'Validity period', 'tagname': 'validity'});
+          dataOut({'name': 'issuedTo', 'value': certDict['issuedTo'], 'description': 'Issued to', 'tagname': 'issuedTo'});
+          dataOut({'name': 'issuedBy', 'value': certDict['issuedBy'], 'description': 'Issued by', 'tagname': 'issuedBy'});
+          dataOut({'name': 'fingerPrint', 'value': certDict['fingerPrint'], 'description': 'Fingerprint (SHA digest)', 'tagname': 'fingerPrint'});
+          dataOut({'name': 'signatureAlgorithm', 'value': certDict['signatureAlgorithm'], 'description': 'Signature algorithm', 'tagname': 'signatureAlgorithm'});
+          dataOut({'tagname': "certificate", 'tagtype': "2"});
+        else:
+          dataOut({'value': "No personal certificate exist in keystore."});
+      else:
+        dataOut({'value': "No personal certificate exist in keystore."});
+  except:
+    dataOut({'description': "ERROR", 'value': "Exception raised while executing AdminTask.listPersonalCertificates() to list certificates", 'tagname': "ERROR"});
+    pass;
+  dataOut({'tagname': "personalcertificates", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
 # get_virtualHostProperties
@@ -1134,6 +1184,9 @@ def get_variables(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 # get IDs, searching by scope, and type
   for variableMap in AdminConfig.getid('/' + objectType + ':' + objectName + '/VariableMap:/').split(lineSeparator):
     if variableMap != "":
@@ -1160,6 +1213,9 @@ def get_sharedLibraryProperties(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 # get IDs, searching by scope, and type
   for SharedLib in AdminConfig.getid('/' + objectType + ':' + objectName + '/Library:/').split(lineSeparator):
     if SharedLib != "":
@@ -1182,9 +1238,20 @@ def get_sharedLibraryProperties(objectID):
 #----------------------------------------------------------------------------
 def get_nameSpaceBindingProperties(objectID):
   dataOut({'description': "Name Space Bindings", 'tagname': "namespacebindings", 'tagtype': "1"});
-  for NSB in AdminConfig.list('StringNameSpaceBinding', objectID).split(lineSeparator):
+
+  # get name and objectType of the objectID
+  objectName = cybcon_was.showAttribute(objectID, 'name');
+  objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
+
+  # get string NSBs
+  #for NSB in AdminConfig.list('StringNameSpaceBinding', objectID).split(lineSeparator):
+  for NSB in AdminConfig.getid('/' + objectType + ':' + objectName + '/StringNameSpaceBinding:/').split(lineSeparator):
     if NSB != "":
-      dataOut({'tagname': "namespacebinding", 'tagtype': "1"});
+      dataOut({'tagname': "namespacebinding", 'tagprops': [ "bindingtype='string'" ], 'tagtype': "1"});
+      dataOut({'name': 'bindingtype', 'value': 'string', 'description': 'Binding type', 'tagname': 'bindingtype'});
       n = cybcon_was.showAttribute(NSB, 'name');
       dataOut({'name': "name", 'value': n, 'description': "Binding Identifier", 'tagname': "name"});
       nins = cybcon_was.showAttribute(NSB, 'nameInNameSpace');
@@ -1196,8 +1263,41 @@ def get_nameSpaceBindingProperties(objectID):
         v = cybcon_was.showAttribute(NSB, 'stringToBind');
       dataOut({'name': "stringToBind", 'value': v, 'description': "String Value", 'tagname': "stringtobind"});
       dataOut({'tagname': "namespacebinding", 'tagtype': "2"});
-    else:
-      dataOut({'value': "No name space bindings defined on this scope."});
+
+  # get EJB NSBs
+  for NSB in AdminConfig.getid('/' + objectType + ':' + objectName + '/EjbNameSpaceBinding:/').split(lineSeparator):
+    if NSB != "":
+      dataOut({'tagname': "namespacebinding", 'tagprops': [ "bindingtype='Ejb'" ], 'tagtype': "1"});
+      dataOut({'name': 'bindingtype', 'value': 'Ejb', 'description': 'Binding type', 'tagname': 'bindingtype'});
+      dataOut({'name': "name", 'value': cybcon_was.showAttribute(NSB, 'name'), 'description': "Binding Identifier", 'tagname': "name"});
+      dataOut({'name': "nameInNameSpace", 'value': cybcon_was.showAttribute(NSB, 'nameInNameSpace'), 'description': "Name in Name Space", 'tagname': "nameinnamespace"});
+      dataOut({'name': 'bindingLocation', 'value': cybcon_was.showAttribute(NSB, 'bindingLocation'), 'description': 'Enterprise Bean Location', 'tagname': 'bindingLocation'});
+      dataOut({'name': 'applicationServerName', 'value': cybcon_was.showAttribute(NSB, 'applicationServerName'), 'description': 'Server', 'tagname': 'applicationServerName'});
+      dataOut({'name': 'ejbJndiName', 'value': cybcon_was.showAttribute(NSB, 'ejbJndiName'), 'description': 'JNDI name', 'tagname': 'ejbJndiName'});
+      dataOut({'tagname': "namespacebinding", 'tagtype': "2"});
+
+  # get CORBA NSBs
+  for NSB in AdminConfig.getid('/' + objectType + ':' + objectName + '/CORBAObjectNameSpaceBinding:/').split(lineSeparator):
+    if NSB != "":
+      dataOut({'tagname': "namespacebinding", 'tagprops': [ "bindingtype='CORBA'" ], 'tagtype': "1"});
+      dataOut({'name': 'bindingtype', 'value': 'CORBA', 'description': 'Binding type', 'tagname': 'bindingtype'});
+      dataOut({'name': "name", 'value': cybcon_was.showAttribute(NSB, 'name'), 'description': "Binding Identifier", 'tagname': "name"});
+      dataOut({'name': "nameInNameSpace", 'value': cybcon_was.showAttribute(NSB, 'nameInNameSpace'), 'description': " Name in name space relative to lookup name prefix", 'tagname': "nameinnamespace"});
+      dataOut({'name': 'corbanameUrl', 'value': cybcon_was.showAttribute(NSB, 'corbanameUrl'), 'description': 'Corbaname URL', 'tagname': 'corbanameUrl'});
+      dataOut({'name': 'federatedContext', 'value': cybcon_was.showAttribute(NSB, 'federatedContext'), 'description': 'Federated context', 'tagname': 'federatedContext'});
+      dataOut({'tagname': "namespacebinding", 'tagtype': "2"});
+
+  # get Indirect lookup NSBs
+  for NSB in AdminConfig.getid('/' + objectType + ':' + objectName + '/IndirectLookupNameSpaceBinding:/').split(lineSeparator):
+    if NSB != "":
+      dataOut({'tagname': "namespacebinding", 'tagprops': [ "bindingtype='Indirect'" ], 'tagtype': "1"});
+      dataOut({'name': 'bindingtype', 'value': 'Indirect', 'description': 'Binding type', 'tagname': 'bindingtype'});
+      dataOut({'name': "name", 'value': cybcon_was.showAttribute(NSB, 'name'), 'description': "Binding Identifier", 'tagname': "name"});
+      dataOut({'name': "nameInNameSpace", 'value': cybcon_was.showAttribute(NSB, 'nameInNameSpace'), 'description': " Name in name space relative to lookup name prefix", 'tagname': "nameinnamespace"});
+      dataOut({'name': 'providerURL', 'value': cybcon_was.showAttribute(NSB, 'providerURL'), 'description': 'Provider URL', 'tagname': 'providerURL'});
+      dataOut({'name': 'jndiName', 'value': cybcon_was.showAttribute(NSB, 'jndiName'), 'description': 'JNDI name', 'tagname': 'jndiName'});
+      dataOut({'tagname': "namespacebinding", 'tagtype': "2"});
+
   dataOut({'tagname': "namespacebindings", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
@@ -2062,6 +2162,9 @@ def get_AsyncBeans(objectID):
 # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+  if objectType == "Server":
+    nodeName = cybcon_was.get_nodeNameByServerID(objectID);
+    if nodeName != "": objectType = 'Node:' + nodeName + '/' + objectType;
 
   dataOut({'description': "Timer managers", 'tagname': "timermanagers", 'tagtype': "1"});
 # get IDs, searching by scope, and type
@@ -3010,6 +3113,9 @@ for nodeName in cybcon_was.get_nodeNames():
         if CONFIG['webserver']['Plugin_properties'] == "true":  get_webServerPlugin(serverID);
         if CONFIG['webserver']['RemoteWebServerMgmnt'] == "true":  get_webServerRemoteMgmnt(serverEntry, serverID);
         if CONFIG['webserver']['EndPointPorts'] == "true": get_endPointPortsFromServer(serverEntry);
+        dataOut({'description': "Environment (server level)", 'tagname': "environment", 'tagtype': "1"});
+        if CONFIG['webserver']['Websphere_variables'] == "true": get_variables(serverID);
+        dataOut({'tagname': "environment", 'tagtype': "2"});
         dataOut({'tagname': "server", 'tagtype': "2"});
     else:
       dataOut({'name': "Server", 'value': serverName, 'description': "server", 'tagname': "server", 'tagprops': [ "serverType='" + serverType + "'"], 'tagtype': "1"});
