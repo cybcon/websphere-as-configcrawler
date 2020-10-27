@@ -1,9 +1,7 @@
 ################################################################################
 # WebSphere configuration crawler
 # description: script to crawl the WAS configuration and output them to
-# cybcon_was - Cybcon Industries simple python/jython WebSphere functions library
-# description: the cybcon_was library is written to give you an easy way to
-#   STDOUT
+#
 # Author: Michael Oberdorf
 # Date: 2009-05-15
 # Tool can be downloaded at: http://www.cybcon-industries.de/
@@ -31,10 +29,10 @@
 # IN THE SOFTWARE.
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 2 $
-#  $LastChangedDate: 2014-03-17 16:26:26 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 4 $
+#  $LastChangedDate: 2014-03-17 16:29:32 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 2 2014-03-17 15:26:26Z cybcon89 $
+#  $Id: config_crawler.py 4 2014-03-17 15:29:32Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
@@ -42,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.401";
+VERSION="0.500";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -114,12 +112,13 @@ def get_configuration(configfile):
 # prevent errors by checking the attributes
 
 # possible sections in config file
-  configSections = ['general', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'cybcon_was'];
+  configSections = ['general', 'cell', 'cluster', 'application', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'cybcon_was'];
 # possible attributes in config file
   configAttributes = {};
-  configAttributes['general'] = ['services', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'LogPasswords', 'output_format'];
-  configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'SIBus'];
+  configAttributes['general'] = ['services', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'application', 'LogPasswords', 'output_format'];
+  configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
   configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables'];
+  configAttributes['application'] = ['appNames', 'targetMapping', 'runState'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
@@ -984,7 +983,6 @@ def get_sharedLibraryProperties(objectID):
 #   return: -
 #----------------------------------------------------------------------------
 def get_nameSpaceBindingProperties(objectID):
-  dataOut({'description': "Naming", 'tagname': "naming", 'tagtype': "1"});
   dataOut({'description': "Name Space Bindings", 'tagname': "namespacebindings", 'tagtype': "1"});
   for NSB in AdminConfig.list('StringNameSpaceBinding', objectID).split(lineSeparator):
     if NSB != "":
@@ -1003,7 +1001,6 @@ def get_nameSpaceBindingProperties(objectID):
     else:
       dataOut({'value': "No name space bindings defined on this scope."});
   dataOut({'tagname': "namespacebindings", 'tagtype': "2"});
-  dataOut({'tagname': "naming", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
 # get_appServerProperties
@@ -1295,6 +1292,28 @@ def get_JVMPropertiesFromServer(serverID):
   dataOut({'description': "Server Infrastructure", 'tagname': "serverinfrastructure", 'tagtype': "1"});
   dataOut({'description': "Java and Process Management", 'tagname': "javaandprocessmanagement", 'tagtype': "1"});
 
+  dataOut({'description': "Class loaders", 'tagname': "classloaders", 'tagtype': "1"});
+  ClassLoaderID="";
+  for ClassLoaderID in AdminConfig.list('Classloader', serverID).split(lineSeparator):
+    if ClassLoaderID != "":
+      dataOut({'tagname': "classloader", 'tagtype': "1"});
+      dataOut({'description': "Shared library references", 'tagname': "libraries", 'tagtype': "1"});
+      ClassLoaderLibID="";
+      for ClassLoaderLibID in cybcon_was.splitArray(cybcon_was.showAttribute(ClassLoaderID, 'libraries')):
+        if ClassLoaderLibID != "":
+          #dataOut({'tagname': "library", 'tagtype': "1"});
+          dataOut({'name': "libraryName", 'value': cybcon_was.showAttribute(ClassLoaderLibID, 'libraryName'), 'description': "Library name", 'tagname': "libraryName"});
+          #dataOut({'name': "sharedClassloader", 'value': cybcon_was.showAttribute(ClassLoaderLibID, 'sharedClassloader'), 'description': "Shared classloader", 'tagname': "sharedClassloader"});
+          #dataOut({'tagname': "library", 'tagtype': "2"});
+      if ClassLoaderLibID == "":
+        dataOut({'value': "No Libraries defined"});
+      dataOut({'tagname': "libraries", 'tagtype': "2"});
+      dataOut({'name': "mode", 'value': cybcon_was.showAttribute(ClassLoaderID, 'mode'), 'description': "Class loader order", 'tagname': "mode"});
+      dataOut({'tagname': "classloader", 'tagtype': "2"});
+  if ClassLoaderID == "":
+    dataOut({'value': "No Class loaders defined"});
+  dataOut({'tagname': "classloaders", 'tagtype': "2"});
+
   dataOut({'description': "Process Definition", 'tagname': "processdefinition", 'tagtype': "1"});
   dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
   CusProp="";
@@ -1311,6 +1330,8 @@ def get_JVMPropertiesFromServer(serverID):
 
   dataOut({'description': "Java Virtual Machine", 'tagname': "javavirtualmachine", 'tagtype': "1"});
   jvmID = AdminConfig.list('JavaVirtualMachine', AdminConfig.list('JavaProcessDef', serverID));
+  dataOut({'name': "classpath", 'value': cybcon_was.showAttribute(jvmID, 'classpath'), 'description': "Classpath", 'tagname': "classpath"});
+  dataOut({'name': "bootClasspath", 'value': cybcon_was.showAttribute(jvmID, 'bootClasspath'), 'description': "Boot Classpath", 'tagname': "bootClasspath"});
   dataOut({'name': "verboseModeGarbageCollection", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeGarbageCollection'), 'description': "Verbose Garbage Collection", 'tagname': "verboseModeGarbageCollection"});
   dataOut({'name': "initialHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'initialHeapSize'), 'description': "Initial Heap Size", 'tagname': "initialHeapSize"});
   dataOut({'name': "maximumHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'maximumHeapSize'), 'description': "Maximum Heap Size", 'tagname': "maximumHeapSize"});
@@ -1637,6 +1658,15 @@ def get_troubleshootingProperties(serverID):
       dataOut({'tagname': "systemerr", 'tagtype': "2"});
 
   dataOut({'tagname': "jvmlogs", 'tagtype': "2"});
+
+  dataOut({'description': "IBM Service Logs", 'tagname': "serviceLog", 'tagtype': "1"});
+  serviceLogID = AdminConfig.list('ServiceLog', serverID);
+  if serviceLogID != '':
+    dataOut({'name': "enable", 'value': cybcon_was.showAttribute(serviceLogID, 'enabled'), 'description': "Enable service log", 'tagname': "enable"});
+    dataOut({'name': "fileName", 'value': cybcon_was.showAttribute(serviceLogID, 'name'), 'description': "File Name", 'tagname': "fileName"});
+    dataOut({'name': "size", 'value': cybcon_was.showAttribute(serviceLogID, 'size'), 'unit': "MB", 'description': "Maximum File Size", 'tagname': "size"});
+  dataOut({'tagname': "serviceLog", 'tagtype': "2"});
+
   dataOut({'tagname': "loggingandtracing", 'tagtype': "2"});
   dataOut({'tagname': "troubleshooting", 'tagtype': "2"});
 
@@ -1929,6 +1959,128 @@ def get_clusterMembers(clusterID):
     dataOut({'value': "No cluster member found in this cluster."});
   dataOut({'tagname': "clustermembers", 'tagtype': "2"});
 
+#----------------------------------------------------------------------------
+# get_enterpriseApplications
+#   description: output information about installed applications
+#   input: flag targetMapping, flag runState
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplications(targetMapping, runState):
+  dataOut({'tagname': "applications", 'description': "Applications", 'tagtype': "1"});
+  dataOut({'tagname': "enterpriseapplications", 'description': "Enterprise Applications", 'tagtype': "1"});
+
+  if CONFIG['application']['appNames'] == "true":
+    for appName in cybcon_was.get_applications():
+      if targetMapping == "true" or runState == "true":
+        dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname", 'tagtype': "1"});
+        if targetMapping == "true":
+          for serverName in cybcon_was.get_applicationTargetServerNames(appName):
+            if runState == "true":
+              dataOut({'name': "servername", 'value': serverName, 'description': "Application target server", 'tagname': "servername", 'tagtype': "1"});
+              dataOut({'name': "applicationstatus", 'value': cybcon_was.get_applicationStateOnServer(appName, serverName), 'description': "Application Status", 'tagname': "applicationstatus"});
+              dataOut({'tagname': "servername", 'tagtype': "2"});
+            else:
+              dataOut({'name': "servername", 'value': serverName, 'description': "Application target server", 'tagname': "servername"});
+        else:
+          dataOut({'name': "applicationstatus", 'value': cybcon_was.get_applicationState(appName), 'description': "Application Status", 'tagname': "applicationstatus"});
+        dataOut({'tagname': "appname", 'tagtype': "2"});
+      else:
+        dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname"});
+
+  dataOut({'tagname': "enterpriseapplications", 'tagtype': "2"});
+  dataOut({'tagname': "applications", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_CORBANamingService
+#   description: output information about CORBA Naming Service Users and
+#     Groups
+#   input: cell ID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_CORBANamingService(cellID):
+  # definig hash table for the  CORBA Naming Service Groups informations
+  groups={};
+  # definig hash table for the  CORBA Naming Service Users informations
+  users={};
+
+  for authTableExtID in AdminConfig.list('AuthorizationTableExt', cellID).split(lineSeparator):
+    if cybcon_was.showAttribute(authTableExtID, 'fileName') == "naming-authz.xml":
+      for authID in cybcon_was.splitArray(cybcon_was.showAttribute(authTableExtID, 'authorizations')):
+        # get the Role Names, only the 4 roles are valid
+        roleName = cybcon_was.showAttribute(cybcon_was.showAttribute(authID, 'role'), 'roleName');
+        if roleName == "CosNamingCreate":   roleName = "Cos Naming Create";
+        elif roleName == "CosNamingDelete": roleName = "Cos Naming Delete";
+        elif roleName == "CosNamingRead":   roleName = "Cos Naming Read";
+        elif roleName == "CosNamingWrite":  roleName = "Cos Naming Write";
+        else: continue;
+  
+        # get Group Names which have that role
+        auth_grps=[];
+        for groupID in cybcon_was.splitArray(cybcon_was.showAttribute(authID, 'groups')):
+          if groupID != "":
+            groupName = cybcon_was.showAttribute(groupID, 'name');
+            if auth_grps.count(groupName) == 0: auth_grps.append(groupName);
+        # get User Names which have that role
+        auth_usrs=[];
+        for userID in cybcon_was.splitArray(cybcon_was.showAttribute(authID, 'users')):
+          if userID != "":
+            userName = cybcon_was.showAttribute(userID, 'name');
+            if auth_users.count(userName) == 0: auth_usrs.append(userName);
+        # get Special Subject Names whih have that role
+        for spSubjectID in cybcon_was.splitArray(cybcon_was.showAttribute(authID, 'specialSubjects')):
+          if spSubjectID != "":
+            [ foo, subjectName ] = spSubjectID.split("#");
+            [ subjectName, foo ] = subjectName.split("_");
+            if subjectName == "EveryoneExt": subjectName="EVERYONE";
+            if subjectName == "AllAuthenticatedUsersExt": subjectName="ALL_AUTHENTICATED";
+            if subjectName == "ServerExt": continue;
+            if auth_grps.count(subjectName) == 0: auth_grps.append(subjectName);
+
+        # loop over temporary user and group array and append role to the hashtable
+        for auth_grp in auth_grps:
+          if auth_grp != "":
+            if groups.has_key(auth_grp) != 1: groups[auth_grp]=[];
+            if groups[auth_grp].count(roleName) == 0: groups[auth_grp].append(roleName);
+        for auth_usr in auth_usrs:
+          if auth_usr != "":
+            if users.has_key(auth_usr) != 1: users[auth_usr]=[];
+            if users[auth_usr].count(roleName) == 0: users[auth_usr].append(roleName);
+
+  # Output CORBA Naming Service Users
+  dataOut({'tagname': "corbanamingserviceusers", 'description': "CORBA Naming Service Users", 'tagtype': "1"});
+  usr="";
+  for usr in users.keys():
+    if usr != "":
+      dataOut({'tagname': "corbanamingserviceuser", 'tagtype': "1"});
+      dataOut({'value': usr, 'description': "User", 'tagname': "user"});
+      dataOut({'description': "Role(s)", 'tagname': "roles", 'tagtype': "1"});
+      for role in users[usr]:
+        dataOut({'value': role, 'tagname': "role"});
+      dataOut({'tagname': "roles", 'tagtype': "2"});
+      dataOut({'tagname': "corbanamingserviceuser", 'tagtype': "2"});
+  if usr == "":
+    dataOut({'value': "No CORBA Naming Service Users defined."});
+  dataOut({'tagname': "corbanamingserviceusers", 'tagtype': "2"});
+
+  # Output CORBA Naming Service Groups
+  dataOut({'tagname': "corbanamingservicegroups", 'description': "CORBA Naming Service Groups", 'tagtype': "1"});
+  grp = "";
+  for grp in groups.keys():
+    if grp != "":
+      dataOut({'tagname': "corbanamingservicegroup", 'tagtype': "1"}); 
+      dataOut({'value': grp, 'description': "Group", 'tagname': "group"}); 
+      dataOut({'description': "Role(s)", 'tagname': "roles", 'tagtype': "1"}); 
+      for role in groups[grp]:
+        dataOut({'value': role, 'tagname': "role"}); 
+      dataOut({'tagname': "roles", 'tagtype': "2"}); 
+      dataOut({'tagname': "corbanamingservicegroup", 'tagtype': "2"});
+  if grp == "":
+    dataOut({'value': "No CORBA Naming Service Groups defined."});
+  dataOut({'tagname': "corbanamingservicegroups", 'tagtype': "2"});
+
+
 #############################################################################
 # MAIN program
 #############################################################################
@@ -2016,7 +2168,11 @@ if CONFIG['general']['cell'] == "true":
   if CONFIG['cell']['Virtual_hosts'] == "true": get_virtualHostProperties(cellID);
   if CONFIG['cell']['Websphere_variables'] == "true": get_variables(cellID);
   if CONFIG['cell']['Shared_libraries'] == "true": get_sharedLibraryProperties(cellID);
-  if CONFIG['cell']['NameSpaceBindings'] == "true": get_nameSpaceBindingProperties(cellID);
+  if CONFIG['cell']['NameSpaceBindings'] == "true" or CONFIG['cell']['CORBANamingService'] == "true":
+    dataOut({'description': "Naming", 'tagname': "naming", 'tagtype': "1"});
+    if CONFIG['cell']['NameSpaceBindings'] == "true": get_nameSpaceBindingProperties(cellID);
+    if CONFIG['cell']['CORBANamingService'] == "true": get_CORBANamingService(cellID);
+    dataOut({'tagname': "naming", 'tagtype': "2"});
   if CONFIG['cell']['SIBus'] == "true": get_SIBusProperties(cellID);
   dataOut({'tagname': "environment", 'tagtype': "2"});
 
@@ -2045,6 +2201,9 @@ if CONFIG['general']['cluster'] == "true":
     dataOut({'tagname': "cluster", 'tagtype': "2"});
   dataOut({'tagname': "clusters", 'tagtype': "2"});
 
+#===========================================================================
+# loop over applications
+if CONFIG['general']['application'] == "true": get_enterpriseApplications(CONFIG['application']['targetMapping'], CONFIG['application']['runState']);
 
 #===========================================================================
 # loop over nodes
@@ -2075,7 +2234,10 @@ for nodeName in cybcon_was.get_nodeNames():
     dataOut({'description': "Environment (node level)", 'tagname': "environment", 'tagtype': "1"});
     if CONFIG['node']['Websphere_variables'] == "true": get_variables(nodeID);
     if CONFIG['node']['Shared_libraries'] == "true": get_sharedLibraryProperties(nodeID);
-    if CONFIG['node']['NameSpaceBindings'] == "true": get_nameSpaceBindingProperties(nodeID);
+    if CONFIG['node']['NameSpaceBindings'] == "true":
+      dataOut({'description': "Naming", 'tagname': "naming", 'tagtype': "1"});
+      get_nameSpaceBindingProperties(nodeID);
+      dataOut({'tagname': "naming", 'tagtype': "2"});
     dataOut({'tagname': "environment", 'tagtype': "2"});
     #===========================================================================
   # loop over servers per node
@@ -2139,7 +2301,10 @@ for nodeName in cybcon_was.get_nodeNames():
         dataOut({'description': "Environment (server level)", 'tagname': "environment", 'tagtype': "1"});
         if CONFIG['appserver']['Websphere_variables'] == "true": get_variables(serverID);
         if CONFIG['appserver']['Shared_libraries'] == "true": get_sharedLibraryProperties(serverID);
-        if CONFIG['appserver']['NameSpaceBindings'] == "true": get_nameSpaceBindingProperties(serverID);
+        if CONFIG['appserver']['NameSpaceBindings'] == "true":
+          dataOut({'description': "Naming", 'tagname': "naming", 'tagtype': "1"});
+          get_nameSpaceBindingProperties(serverID);
+          dataOut({'tagname': "naming", 'tagtype': "2"});
         if CONFIG['appserver']['Logging'] == "true": get_troubleshootingProperties(serverID);
         dataOut({'tagname': "environment", 'tagtype': "2"});
         dataOut({'tagname': "server", 'tagtype': "2"});

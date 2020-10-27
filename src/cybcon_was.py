@@ -8,17 +8,17 @@
 # Library can be downloaded at: http://www.cybcon-industries.de/
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 2 $
-#  $LastChangedDate: 2014-03-17 16:26:26 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 4 $
+#  $LastChangedDate: 2014-03-17 16:29:32 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 2 2014-03-17 15:26:26Z cybcon89 $
+#  $Id: cybcon_was.py 4 2014-03-17 15:29:32Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.000";                       # version of this library
+cybcon_was_lib_version="1.003";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -117,6 +117,8 @@ def showAttribute(objectID, attribute):
   # get all attributes in the object and check if the given attribute is
   # part of the objects attributes
   if find_valueInArray(attribute, get_AttributesFromObject(objectID)) == "true":
+    # sleeping time to prevent exception: java.net.BindException: Address already in use: connect (WASX7017E)
+    time.sleep(0.02);
     # OK, attribute exist, we can request it's value and give that value back
     return AdminConfig.showAttribute(objectID, attribute);
   else:
@@ -477,7 +479,7 @@ def get_applicationTargetServerNames(appName):
   appID = get_applicationIDByName(appName);
 
   # get all targets on which the application is mapped
-  for targetMappingID in showAttribute(appID, 'targetMappings').replace("[", "").replace("]", "").split():
+  for targetMappingID in splitArray(showAttribute(appID, 'targetMappings')):
     # continue if no mapping exists
     if targetMappingID == "": continue;
 
@@ -516,9 +518,6 @@ def get_applicationState(appName):
   FLAG_true = "unset";
   FLAG_false = "unset";
 
-  # get objectID of the application
-  appID = get_applicationIDByName(appName);
-
   # get target server members from application name
   serverNames = get_applicationTargetServerNames(appName);
 
@@ -531,8 +530,8 @@ def get_applicationState(appName):
   # FLAG_true -> application is started
   # FLAG_false -> application is stopped
   if FLAG_true == "set" and FLAG_false == "set": return "partially";
-  if FLAG_true == "unset" and FLAG_false == "set": return "started";
-  if FLAG_true == "set" and FLAG_false == "unset": return "stopped";
+  if FLAG_true == "unset" and FLAG_false == "set": return "stopped";
+  if FLAG_true == "set" and FLAG_false == "unset": return "started";
   if FLAG_true == "unset" and FLAG_false == "unset": return "unmapped";
 
 
