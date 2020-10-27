@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 47 $
-#  $LastChangedDate: 2014-07-18 08:15:53 +0200 (Fri, 18 Jul 2014) $
+#  $Revision: 49 $
+#  $LastChangedDate: 2014-12-29 13:50:21 +0100 (Mon, 29 Dec 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 47 2014-07-18 06:15:53Z cybcon89 $
+#  $Id: config_crawler.py 49 2014-12-29 12:50:21Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.611";
+VERSION="0.620";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -2135,18 +2135,21 @@ def get_SIBusProperties(cellID):
   for SIBusID in AdminConfig.list('SIBus', cellID).split(lineSeparator):
     if SIBusID != "":
       dataOut({'tagname': "sibus", 'tagtype': "1"});
+      dataOut({'tagname': "general", 'description': 'General Properties', 'tagtype': "1"});
       dataOut({'name': "name", 'value': cybcon_was.showAttribute(SIBusID, 'name'), 'description': "Name", 'tagname': "name"});
       dataOut({'name': "uuid", 'value': cybcon_was.showAttribute(SIBusID, 'uuid'), 'description': "UUID", 'tagname': "uuid"});
       dataOut({'name': "permittedChains", 'value': cybcon_was.showAttribute(SIBusID, 'permittedChains'), 'description': "Inter-engine transport chain", 'tagname': "permittedChains"});
       dataOut({'name': "discardMsgsAfterQueueDeletion", 'value': cybcon_was.showAttribute(SIBusID, 'discardMsgsAfterQueueDeletion'), 'description': "Discard messages", 'tagname': "discardMsgsAfterQueueDeletion"});
       dataOut({'name': "configurationReloadEnabled", 'value': cybcon_was.showAttribute(SIBusID, 'configurationReloadEnabled'), 'description': "Configuration reload enabled", 'tagname': "configurationReloadEnabled"});
       dataOut({'name': "highMessageThreshold", 'value': cybcon_was.showAttribute(SIBusID, 'highMessageThreshold'), 'unit': "messages", 'description': "High message threshold", 'tagname': "highMessageThreshold"});
+      dataOut({'tagname': "general", 'tagtype': "2"});
 
+      dataOut({'tagname': "topology", 'description': 'Topology', 'tagtype': "1"});
       dataOut({'description': "Messaging engines", 'tagname': "messagingengines", 'tagtype': "1"});
       for SIBMsgID in AdminConfig.list('SIBMessagingEngine', cellID).split(lineSeparator):
         if SIBMsgID != "":
-          dataOut({'tagname': "messagingengine", 'tagtype': "1"});
           if cybcon_was.showAttribute(SIBusID, 'uuid') == cybcon_was.showAttribute(SIBMsgID, 'busUuid'):
+            dataOut({'tagname': "messagingengine", 'tagtype': "1"});
             dataOut({'name': "name", 'value': cybcon_was.showAttribute(SIBMsgID, 'name'), 'description': "Name", 'tagname': "name"});
             dataOut({'name': "uuid", 'value': cybcon_was.showAttribute(SIBMsgID, 'uuid'), 'description': "UUID", 'tagname': "uuid"});
             dataOut({'name': "initialState", 'value': cybcon_was.showAttribute(SIBMsgID, 'initialState'), 'description': "Initial state", 'tagname': "initialState"});
@@ -2188,10 +2191,81 @@ def get_SIBusProperties(cellID):
               dataOut({'description': "Allow thread allocation beyond maximum thread pool size", 'value': "false"});
             dataOut({'tagname': "mediationthreadpool", 'tagtype': "2"});
             dataOut({'tagname': "additionalproperties", 'tagtype': "2"});
-          dataOut({'tagname': "messagingengine", 'tagtype': "2"});
+            dataOut({'tagname': "messagingengine", 'tagtype': "2"});
         else:
           dataOut({'value': "No messaging engine defined for this bus."});
       dataOut({'tagname': "messagingengines", 'tagtype': "2"});
+      dataOut({'tagname': "topology", 'tagtype': "2"});
+
+
+      dataOut({'tagname': "destinationresources", 'description': 'Destination resources', 'tagtype': "1"});
+      dataOut({'tagname': "destinations", 'description': 'Destinations', 'tagtype': "1"});
+      for SIBusDestID in AdminConfig.list('SIBDestination', SIBusID).split(lineSeparator):
+        if SIBusDestID == "": continue;
+        dataOut({'tagname': 'destination', 'tagtype': '1'});
+        SIBusDestID_identifier=cybcon_was.showAttribute(SIBusDestID, 'identifier');
+        dataOut({'name': 'identifier', 'value': SIBusDestID_identifier, 'description': 'Identifier', 'tagname': 'identifier'});
+        dataOut({'name': 'uuid', 'value': cybcon_was.showAttribute(SIBusDestID, 'uuid'), 'description': 'UUID', 'tagname': 'UUID'});
+        dataOut({'name': 'TYPE', 'value': cybcon_was.get_ObjectTypeByID(SIBusDestID), 'description': 'Type', 'tagname': 'type'});
+        dataOut({'tagname': 'qos', 'description': 'Quality of Service', 'tagtype': '1'});
+        dataOut({'name': 'overrideOfQOSByProducerAllowed', 'value': cybcon_was.showAttribute(SIBusDestID, 'overrideOfQOSByProducerAllowed'), 'description': 'Enable producers to override default reliability', 'tagname': 'overrideOfQOSByProducerAllowed'});
+        dataOut({'name': 'reliability', 'value': cybcon_was.showAttribute(SIBusDestID, 'reliability'), 'description': 'Default reliability', 'tagname': 'reliability'});
+        dataOut({'name': 'maxReliability', 'value': cybcon_was.showAttribute(SIBusDestID, 'maxReliability'), 'description': 'Maximum reliability', 'tagname': 'maxReliability'});
+        dataOut({'name': 'defaultPriority', 'value': cybcon_was.showAttribute(SIBusDestID, 'defaultPriority'), 'description': 'Default priority', 'tagname': 'defaultPriority'});
+        dataOut({'tagname': 'qos', 'tagtype': '2'});
+        dataOut({'tagname': 'exceptionDestination', 'description': 'Exception destination', 'tagtype': '1'});
+        dataOut({'tagname': 'exceptionDestinationNone', 'description': 'None', 'tagtype': '1'});
+        dataOut({'value': 'unknown (not implemented in config crawler yet)', 'description': 'selected', 'tagname': 'selected'});
+        blockedRetryTimeout=cybcon_was.showAttribute(SIBusDestID, 'blockedRetryTimeout');
+        if blockedRetryTimeout == "-1":
+          dataOut({'value': 'false', 'description': 'Override messaging engine blocked retry timeout default', 'tagname': 'overwriteBlockedRetryTimeout'});
+        else:
+          dataOut({'value': 'true', 'description': 'Override messaging engine blocked retry timeout default', 'tagname': 'overwriteBlockedRetryTimeout'});
+        dataOut({'name': 'blockedRetryTimeout', 'value': blockedRetryTimeout, 'description': 'Blocked retry timeout in milliseconds', 'unit': 'milliseconds', 'tagname': 'blockedRetryTimeout'});
+        dataOut({'tagname': 'exceptionDestinationNone', 'tagtype': '2'});
+        dataOut({'tagname': 'exceptionDestinationSystem', 'description': 'System', 'tagtype': '1'});
+        dataOut({'value': 'unknown (not implemented in config crawler yet)', 'description': 'selected', 'tagname': 'selected'});
+        dataOut({'tagname': 'exceptionDestinationSystem', 'tagtype': '2'});
+        dataOut({'tagname': 'exceptionDestinationSpecify', 'description': 'Specify', 'tagtype': '1'});
+        dataOut({'value': 'unknown (not implemented in config crawler yet)', 'description': 'selected', 'tagname': 'selected'});
+        dataOut({'name': 'exceptionDiscardReliability', 'value': cybcon_was.showAttribute(SIBusDestID, 'exceptionDiscardReliability'), 'tagname': 'exceptionDiscardReliability'});
+        dataOut({'tagname': 'exceptionDestinationSpecify', 'tagtype': '2'});
+
+        dataOut({'name': 'maxFailedDeliveries', 'value': cybcon_was.showAttribute(SIBusDestID, 'maxFailedDeliveries'), 'description': 'Maximum failed deliveries per message', 'tagname': 'maxFailedDeliveries'});
+        dataOut({'tagname': 'exceptionDestination', 'tagtype': '2'});
+        dataOut({'name': 'sendAllowed', 'value': cybcon_was.showAttribute(SIBusDestID, 'sendAllowed'), 'description': 'Send allowed', 'tagname': 'sendAllowed'});
+        dataOut({'name': 'receiveAllowed', 'value': cybcon_was.showAttribute(SIBusDestID, 'receiveAllowed'), 'description': 'Receive allowed', 'tagname': 'receiveAllowed'});
+        dataOut({'name': 'receiveExclusive', 'value': cybcon_was.showAttribute(SIBusDestID, 'receiveExclusive'), 'description': 'Receive exclusive', 'tagname': 'receiveExclusive'});
+        dataOut({'name': 'maintainStrictMessageOrder', 'value': cybcon_was.showAttribute(SIBusDestID, 'maintainStrictMessageOrder'), 'description': 'Maintain strict message order', 'tagname': 'maintainStrictMessageOrder'});
+        dataOut({'name': 'defaultForwardRoutingPath', 'value': cybcon_was.showAttribute(SIBusDestID, 'defaultForwardRoutingPath'), 'description': 'Default forward routing path', 'tagname': 'defaultForwardRoutingPath'});
+
+        dataOut({'tagname': 'messagepoints', 'description': 'Message points', 'tagtype': '1'});
+        dataOut({'tagname': 'queuepoints', 'description': 'Queue points (WebSphere MQ queue points)', 'tagtype': '1'});
+        for SIBusMQQueuePointID in AdminConfig.list('SIBMQQueueLocalizationPointProxy', SIBusID).split(lineSeparator):
+          if SIBusMQQueuePointID == "": continue;
+          SIBusMQQueuePointID_identifier=cybcon_was.showAttribute(SIBusMQQueuePointID, 'identifier');
+          SIBusMQQueuePointID_identifier=SIBusMQQueuePointID_identifier.split('@', 1)[0];
+          if SIBusDestID_identifier != SIBusMQQueuePointID_identifier: continue;
+          dataOut({'tagname': 'queuepoint', 'tagtype': '1'});
+          dataOut({'name': 'identifier', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'identifier'), 'description': 'Identifier', 'tagname': 'identifier'});
+          dataOut({'name': 'uuid', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'uuid'), 'description': 'UUID', 'tagname': 'uuid'});
+          dataOut({'name': 'targetUuid', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'targetUuid'), 'description': 'Target UUID', 'tagname': 'targetUuid'});
+          dataOut({'name': 'mqQueueName', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'mqQueueName'), 'description': 'WebSphere MQ queue name', 'tagname': 'mqQueueName'});
+          dataOut({'name': 'inboundNonPersistentReliability', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'inboundNonPersistentReliability'), 'description': 'Inbound nonpersistent reliability', 'tagname': 'inboundNonPersistentReliability'});
+          dataOut({'name': 'inboundPersistentReliability', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'inboundPersistentReliability'), 'description': 'Inbound persistent reliability', 'tagname': 'inboundPersistentReliability'});
+          dataOut({'name': 'enableRFH2Header', 'value': cybcon_was.showAttribute(SIBusMQQueuePointID, 'enableRFH2Header'), 'description': 'Include an RFH2 message header when sending messages to WebSphere MQ', 'tagname': 'enableRFH2Header'});
+          dataOut({'tagname': 'queuepoint', 'tagtype': '2'});
+        dataOut({'tagname': 'queuepoints', 'tagtype': '2'});
+        dataOut({'tagname': 'messagepoints', 'tagtype': '2'});
+
+        dataOut({'tagname': 'destination', 'tagtype': '2'});
+      if SIBusDestID == "":
+        dataOut({'value': "No SIB destinations found."});
+
+      dataOut({'tagname': "destinations", 'tagtype': "2"});
+      dataOut({'tagname': "destinationresources", 'tagtype': "2"});
+
+
       dataOut({'tagname': "sibus", 'tagtype': "2"});
     else:
       dataOut({'value': "No buses defined."});
