@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 # COPYRIGHT AND LICENSE
 #
-# (C) Copyright 2009, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
+# (C) Copyright 2009-2013, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -29,10 +29,10 @@
 # IN THE SOFTWARE.
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 6 $
-#  $LastChangedDate: 2014-03-17 16:34:24 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 8 $
+#  $LastChangedDate: 2014-03-17 16:34:59 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 6 2014-03-17 15:34:24Z cybcon89 $
+#  $Id: config_crawler.py 8 2014-03-17 15:34:59Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.532";
+VERSION="0.540";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -124,7 +124,7 @@ def get_configuration(configfile):
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
   configAttributes['appserver'] = ['ApplicationServerProperties', 'JVM_properties', 'EndPointPorts', 'DCSTransports', 'MSGListenerPorts', 'JMS_provider', 'HAManagerService', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'Logging'];
-  configAttributes['webserver'] = [];
+  configAttributes['webserver'] = ['WebServerProperties', 'EndPointPorts', 'Logging', 'Plugin_properties', 'RemoteWebServerMgmnt'];
   configAttributes['cybcon_was'] = [ 'libPath', 'minVersion' ];
 # default value
   configDefaultValue="false";
@@ -186,6 +186,11 @@ def dataOut(DATA):
   wsPrefix = "";
   for i in range(textSpaceCounter):
     wsPrefix = wsPrefix + " ";
+
+  # MASK security specific data if needed
+  if CONFIG['general']['LogPasswords'] != "true":
+    if DATA['description'].lower().find("password") != -1:
+      DATA['value'] = "***skipped by policy***";
 
   # process xml specific output
   if CONFIG['general']['output_format'] == "xml":
@@ -294,12 +299,7 @@ def get_CoreGroupProperties(cellID):
     dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
     CusProp="";
     for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(coreGroupID, 'customProperties')):
-      n = cybcon_was.showAttribute(CusProp, 'name');
-      if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-        v = "***skipped by policy***";
-      else:
-        v = cybcon_was.showAttribute(CusProp, 'value');
-      dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+      dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
     if CusProp == "":
       dataOut({'value': "No custom properties set."});
     dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -389,12 +389,7 @@ def get_JMSProviderProperties(objectID):
         for PropSet in cybcon_was.splitArray(cybcon_was.showAttribute(MQQCF, 'propertySet')):
           CusProp="";
           for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(PropSet, 'resourceProperties')):
-            n = cybcon_was.showAttribute(CusProp, 'name');
-            if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-              v = "***skipped by policy***";
-            else:
-              v = cybcon_was.showAttribute(CusProp, 'value');
-            dataOut({'name': "resourceProperty", 'value': v, 'description': n, 'tagname': "property"});
+            dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
           if CusProp == "":
             dataOut({'value': "No resource properties found in this property set."});
         if PropSet == "":
@@ -521,12 +516,7 @@ def get_JDBCProviderProperties(objectID):
           for PropSet in cybcon_was.splitArray(cybcon_was.showAttribute(DataSource, 'propertySet')):
             CusProp="";
             for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(PropSet, 'resourceProperties')):
-              n = cybcon_was.showAttribute(CusProp, 'name');
-              if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                v = "***skipped by policy***";
-              else:
-                v = cybcon_was.showAttribute(CusProp, 'value');
-              dataOut({'name': "resourceProperty", 'value': v, 'description': n, 'tagname': "property"});
+              dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
             if CusProp == "":
               dataOut({'value': "No resource properties found in this property set."});
           if PropSet == "":
@@ -589,12 +579,7 @@ def get_ResourceAdapterProperties(objectID):
           for PropSet in cybcon_was.splitArray(cybcon_was.showAttribute(RACF, 'propertySet')):
             CusProp="";
             for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(PropSet, 'resourceProperties')):
-              n = cybcon_was.showAttribute(CusProp, 'name');
-              if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                v = "***skipped by policy***";
-              else:
-                v = cybcon_was.showAttribute(CusProp, 'value');
-              dataOut({'name': "resourceProperty", 'value': v, 'description': n, 'tagname': "property"});
+              dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
             if CusProp == "":
               dataOut({'value': "No resource properties found in this property set."});
           if PropSet == "":
@@ -618,12 +603,7 @@ def get_ResourceAdapterProperties(objectID):
       dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
       CusProp="";
       for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(J2CAcSpecID, 'resourceProperties')):
-        n = cybcon_was.showAttribute(CusProp, 'name');
-        if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(CusProp, 'value');
-        dataOut({'name': "resourceProperty", 'value': v, 'description': n, 'tagname': "property"});
+        dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
         if CusProp == "":
           dataOut({'value': "No custom properties configured for this J2C Activation specification!"});
       dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -715,12 +695,7 @@ def get_ResourceEnvironmentProperties(objectID):
           for PropSet in cybcon_was.splitArray(cybcon_was.showAttribute(ResEnvEntryID, 'propertySet')):
             CusProp="";
             for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(PropSet, 'resourceProperties')):
-              n = cybcon_was.showAttribute(CusProp, 'name');
-              if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                v = "***skipped by policy***";
-              else:
-                v = cybcon_was.showAttribute(CusProp, 'value');
-              dataOut({'name': "resourceProperty", 'value': v, 'description': n, 'tagname': "property"});
+              dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
             if CusProp == "":
               dataOut({'value': "No resource properties found in this property set."});
           if PropSet == "":
@@ -736,12 +711,7 @@ def get_ResourceEnvironmentProperties(objectID):
       for PropSet in cybcon_was.splitArray(cybcon_was.showAttribute(ResEnvProvID, 'propertySet')):
         CusProp="";
         for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(PropSet, 'resourceProperties')):
-          n = cybcon_was.showAttribute(CusProp, 'name');
-          if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-            v = "***skipped by policy***";
-          else:
-            v = cybcon_was.showAttribute(CusProp, 'value');
-          dataOut({'name': "resourceProperty", 'value': v, 'description': n, 'tagname': "property"});
+          dataOut({'name': "resourceProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
         if CusProp == "":
           dataOut({'value': "No resource properties found in this property set."});
       if PropSet == "":
@@ -816,12 +786,7 @@ def get_securityProperties(cellName):
   dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
   CusProp="";
   for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(AdminConfig.list('CustomUserRegistry', securityID), 'properties')):
-    n = cybcon_was.showAttribute(CusProp, 'name');
-    if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-      v = "***skipped by policy***";
-    else:
-      v = cybcon_was.showAttribute(CusProp, 'value');
-    dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
   if CusProp == "":
     dataOut({'value': "No custom properties set."});
   dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -847,12 +812,7 @@ def get_securityProperties(cellName):
         dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
         CusProp="";
         for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(iceptID, 'trustProperties')):
-          n = cybcon_was.showAttribute(CusProp, 'name');
-          if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-            v = "***skipped by policy***";
-          else:
-            v = cybcon_was.showAttribute(CusProp, 'value');
-          dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+          dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
         if CusProp == "":
           dataOut({'value': "No custom properties set."});
         dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -873,11 +833,7 @@ def get_securityProperties(cellName):
       dataOut({'tagname': "j2cauthenticationdata", 'tagtype': "1"});
       dataOut({'name': "alias", 'value': cybcon_was.showAttribute(JAASAuthData, 'alias'), 'description': "Alias", 'tagname': "alias"});
       dataOut({'name': "userId", 'value': cybcon_was.showAttribute(JAASAuthData, 'userId'), 'description': "User ID", 'tagname': "userid"});
-      if CONFIG['general']['LogPasswords'] != "true":
-        v = "***skipped by policy***";
-      else:
-        v = cybcon_was.showAttribute(JAASAuthData, 'password');
-      dataOut({'name': "password", 'value': v, 'description': "Password", 'tagname': "password"});
+      dataOut({'name': "password", 'value': cybcon_was.showAttribute(JAASAuthData, 'password'), 'description': "Password", 'tagname': "password"});
       dataOut({'name': "description", 'value': cybcon_was.showAttribute(JAASAuthData, 'description'), 'description': "Description", 'tagname': "description"});
       dataOut({'tagname': "j2cauthenticationdata", 'tagtype': "2"});
     else:
@@ -898,11 +854,7 @@ def get_securityProperties(cellName):
         keyStoreName = cybcon_was.showAttribute(keyStoreID, 'name');
         dataOut({'name': "name", 'value': keyStoreName, 'description': "Name", 'tagname': "name"});
         dataOut({'name': "location", 'value': cybcon_was.showAttribute(keyStoreID, 'location'), 'description': "Path", 'tagname': "location"});
-        if CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(keyStoreID, 'password');
-        dataOut({'name': "password", 'value': v, 'description': "Password", 'tagname': "password"});
+        dataOut({'name': "password", 'value': cybcon_was.showAttribute(keyStoreID, 'password'), 'description': "Password", 'tagname': "password"});
         dataOut({'name': "type", 'value': cybcon_was.showAttribute(keyStoreID, 'type'), 'description': "Type", 'tagname': "type"});
         dataOut({'name': "readOnly", 'value': cybcon_was.showAttribute(keyStoreID, 'readOnly'), 'description': "Read only", 'tagname': "readOnly"});
         dataOut({'name': "initializeAtStartup", 'value': cybcon_was.showAttribute(keyStoreID, 'initializeAtStartup'), 'description': "Initialize at startup", 'tagname': "initializeAtStartup"});
@@ -920,8 +872,9 @@ def get_securityProperties(cellName):
             for signerCertAttrib in signerCert.split('] ['):
               # loop over possible certificate attributes and scan line for the attributes
               for certAttribute in certAttributeList:
-                if signerCertAttrib.find(certAttribute) != -1:
-                  certDict[certAttribute] = signerCertAttrib.replace(certAttribute, "").replace("[", "").replace("]", "").strip();
+                certAtLen=len(certAttribute);
+                if signerCertAttrib[:certAtLen].find(certAttribute) != -1:
+                  certDict[certAttribute] = signerCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
                   continue;
             #output certificate informations:
             if certDict['alias'] != "":
@@ -954,8 +907,9 @@ def get_securityProperties(cellName):
             for personalCertAttrib in personalCert.split('] ['):
               # loop over possible certificate attributes and scan line for the attributes
               for certAttribute in certAttributeList:
-                if personalCertAttrib.find(certAttribute) != -1:
-                  certDict[certAttribute] = personalCertAttrib.replace(certAttribute, "").replace("[", "").replace("]", "").strip();
+                certAtLen=len(certAttribute);
+                if personalCertAttrib[:certAtLen].find(certAttribute) != -1:
+                  certDict[certAttribute] = personalCertAttrib[certAtLen:].replace("[", "").replace("]", "").strip();
                   continue;
             #output certificate informations:
             if certDict['alias'] != "":
@@ -1043,12 +997,7 @@ def get_variables(objectID):
     if variableMap != "":
       variableEntry = "";
       for variableEntry in cybcon_was.splitArray(cybcon_was.showAttribute(variableMap, 'entries')):
-        n = cybcon_was.showAttribute(variableEntry, 'symbolicName');
-        if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(variableEntry, 'value');
-        dataOut({'name': "entry", 'value': v, 'description': n, 'tagname': "property"});
+        dataOut({'name': "entry", 'value': cybcon_was.showAttribute(variableEntry, 'value'), 'description': cybcon_was.showAttribute(variableEntry, 'symbolicName'), 'tagname': "property"});
       if variableEntry == "":
         dataOut({'value': "No variables set on this scope."});
     else:
@@ -1133,12 +1082,7 @@ def get_appServerProperties(serverID, serverName):
       dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
       CusProp="";
       for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(WCID, 'properties')):
-        n = cybcon_was.showAttribute(CusProp, 'name');
-        if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(CusProp, 'value');
-        dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+        dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
       if CusProp == "":
         dataOut({'value': "No custom properties set."});
       dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1229,12 +1173,7 @@ def get_appServerProperties(serverID, serverName):
                 dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
                 CusProp="";
                 for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                  n = cybcon_was.showAttribute(CusProp, 'name');
-                  if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                    v = "***skipped by policy***";
-                  else:
-                    v = cybcon_was.showAttribute(CusProp, 'value');
-                  dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                  dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
                 if CusProp == "":
                   dataOut({'value': "No custom properties set."});
                 dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1249,12 +1188,7 @@ def get_appServerProperties(serverID, serverName):
                 dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
                 CusProp="";
                 for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                  n = cybcon_was.showAttribute(CusProp, 'name');
-                  if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                    v = "***skipped by policy***";
-                  else:
-                    v = cybcon_was.showAttribute(CusProp, 'value');
-                  dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                  dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
                 if CusProp == "":
                   dataOut({'value': "No custom properties set."});
                 dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1274,12 +1208,7 @@ def get_appServerProperties(serverID, serverName):
                 dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
                 CusProp="";
                 for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                  n = cybcon_was.showAttribute(CusProp, 'name');
-                  if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                    v = "***skipped by policy***";
-                  else:
-                    v = cybcon_was.showAttribute(CusProp, 'value');
-                  dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                  dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
                 if CusProp == "":
                   dataOut({'value': "No custom properties set."});
                 dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1294,12 +1223,7 @@ def get_appServerProperties(serverID, serverName):
                 dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
                 CusProp="";
                 for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                  n = cybcon_was.showAttribute(CusProp, 'name');
-                  if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                    v = "***skipped by policy***";
-                  else:
-                    v = cybcon_was.showAttribute(CusProp, 'value');
-                  dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                  dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
                 if CusProp == "":
                   dataOut({'value': "No custom properties set."});
                 dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1354,12 +1278,7 @@ def get_appServerProperties(serverID, serverName):
   CusProp="";
   for serverComponentID in AdminConfig.list('ApplicationServer', serverID).split(lineSeparator):
     for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(serverComponentID, 'properties')):
-      n = cybcon_was.showAttribute(CusProp, 'name');
-      if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-        v = "***skipped by policy***";
-      else:
-        v = cybcon_was.showAttribute(CusProp, 'value');
-      dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+      dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
     if CusProp == "":
       dataOut({'value': "No custom properties set."});
   dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1426,12 +1345,7 @@ def get_JVMPropertiesFromServer(serverID):
   dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
   CusProp="";
   for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(AdminConfig.list('JavaProcessDef', serverID), 'environment')):
-    n = cybcon_was.showAttribute(CusProp, 'name');
-    if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-      v = "***skipped by policy***";
-    else:
-      v = cybcon_was.showAttribute(CusProp, 'value');
-    dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
   if CusProp == "":
     dataOut({'value': "No custom properties set."});
   dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1447,12 +1361,7 @@ def get_JVMPropertiesFromServer(serverID):
   dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
   CusProp="";
   for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(jvmID, 'systemProperties')):
-    n = cybcon_was.showAttribute(CusProp, 'name');
-    if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-      v = "***skipped by policy***";
-    else:
-      v = cybcon_was.showAttribute(CusProp, 'value');
-    dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
   if CusProp == "":
     dataOut({'value': "No custom properties set."});
   dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1545,12 +1454,7 @@ def get_DCSTransportsFromServer(serverID):
               dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
               CusProp="";
               for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                n = cybcon_was.showAttribute(CusProp, 'name');
-                if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                  v = "***skipped by policy***";
-                else:
-                  v = cybcon_was.showAttribute(CusProp, 'value');
-                dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
               if CusProp == "":
                 dataOut({'value': "No custom properties set."});
               dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1564,12 +1468,7 @@ def get_DCSTransportsFromServer(serverID):
               dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
               CusProp="";
               for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                n = cybcon_was.showAttribute(CusProp, 'name');
-                if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                  v = "***skipped by policy***";
-                else:
-                  v = cybcon_was.showAttribute(CusProp, 'value');
-                dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
               if CusProp == "":
                 dataOut({'value': "No custom properties set."});
               dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1582,12 +1481,7 @@ def get_DCSTransportsFromServer(serverID):
               dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
               CusProp="";
               for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(tranChanID, 'properties')):
-                n = cybcon_was.showAttribute(CusProp, 'name');
-                if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-                  v = "***skipped by policy***";
-                else:
-                  v = cybcon_was.showAttribute(CusProp, 'value');
-                dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+                dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
               if CusProp == "":
                 dataOut({'value': "No custom properties set."});
               dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1658,12 +1552,7 @@ def get_MSGListenerServicePropertiesFromServer(serverID, serverName):
       dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
       CusProp="";
       for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(MSGListenerSrvID, 'properties')):
-        n = cybcon_was.showAttribute(CusProp, 'name');
-        if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(CusProp, 'value');
-        dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+        dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
       if CusProp == "":
         dataOut({'value': "No custom properties set."});
       dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -1884,8 +1773,9 @@ def get_serviceProviders():
         # loop over attribute lines
         for webServiceAttribute in webService.split('] ['):
           for wsAttribute in webServiceAttrList:
-            if webServiceAttribute.find(wsAttribute) != -1:
-              wsDict[wsAttribute] = webServiceAttribute.replace(wsAttribute, "").strip();
+            wsAtLen=len(wsAttribute);
+            if webServiceAttribute[:wsAtLen].find(wsAttribute) != -1:
+              wsDict[wsAttribute] = webServiceAttribute[wsAtLen:].strip();
               continue;
   
         #output informations:
@@ -1912,8 +1802,9 @@ def get_serviceProviders():
               # loop over attribute lines
               for psaAtVal in psa.split('] ['):
                 for psaAttribute in psaAttrList:
-                  if psaAtVal.find(psaAttribute) != -1:
-                    psaDict[psaAttribute] = psaAtVal.replace(psaAttribute, "").replace('[', "").replace(']', "").strip();
+                  psaAtLen=len(psaAttribute);
+                  if psaAtVal[:psaAtLen].find(psaAttribute) != -1:
+                    psaDict[psaAttribute] = psaAtVal[psaAtLen:].replace('[', "").replace(']', "").strip();
                     continue;
 
               #output informations:
@@ -2031,12 +1922,7 @@ def get_AsyncBeans(objectID):
       dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
       CusProp="";
       for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(TMID, 'customProperties')):
-        n = cybcon_was.showAttribute(CusProp, 'name');
-        if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(CusProp, 'value');
-        dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+        dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
       if CusProp == "":
         dataOut({'value': "No custom properties set."});
       dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -2088,12 +1974,7 @@ def get_AsyncBeans(objectID):
       dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
       CusProp="";
       for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(WMID, 'customProperties')):
-        n = cybcon_was.showAttribute(CusProp, 'name');
-        if n.lower().find("password") != -1 and CONFIG['general']['LogPasswords'] != "true":
-          v = "***skipped by policy***";
-        else:
-          v = cybcon_was.showAttribute(CusProp, 'value');
-        dataOut({'name': "customProperty", 'value': v, 'description': n, 'tagname': "property"});
+        dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
       if CusProp == "":
         dataOut({'value': "No custom properties set."});
       dataOut({'tagname': "customproperties", 'tagtype': "2"});
@@ -2388,6 +2269,157 @@ def get_CORBANamingService(cellID):
     dataOut({'value': "No CORBA Naming Service Groups defined."});
   dataOut({'tagname': "corbanamingservicegroups", 'tagtype': "2"});
 
+#----------------------------------------------------------------------------
+# get_webServerProperties
+#   description: get general properties from webservers
+#   input: serverEntry, serverID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_webServerProperties(serverEntry, serverID):
+  dataOut({'description': "General Properties", 'tagname': "generalproperties", 'tagtype': "1"});
+  dataOut({'name': "servername", 'value': cybcon_was.showAttribute(serverEntry, 'serverName'), 'description': "Web server name", 'tagname': "servername"});
+
+  componentID=cybcon_was.splitArray(cybcon_was.showAttribute(serverID, 'components'))[0];
+  if componentID != "":
+    dataOut({'name': "webserverType", 'value': cybcon_was.showAttribute(componentID, 'webserverType'), 'description': "Type", 'tagname': "webserverType"});
+
+  for endpointPort in cybcon_was.splitArray(cybcon_was.showAttribute(serverEntry, 'specialEndpoints')):
+    if cybcon_was.showAttribute(endpointPort, 'endPointName') == "WEBSERVER_ADDRESS":
+      dataOut({'name': "Port", 'value': cybcon_was.showAttribute(cybcon_was.showAttribute(endpointPort, 'endPoint'), 'port'), 'description': "Port", 'tagname': "Port"});
+
+  if componentID != "":
+    dataOut({'name': "webserverInstallRoot", 'value': cybcon_was.showAttribute(componentID, 'webserverInstallRoot'), 'description': "Web server installation location", 'tagname': "webserverInstallRoot"});
+    dataOut({'name': "configurationFilename", 'value': cybcon_was.showAttribute(componentID, 'configurationFilename'), 'description': "Configuration file name", 'tagname': "configurationFilename"});
+
+  dataOut({'tagname': "generalproperties", 'tagtype': "2"});
+
+
+#----------------------------------------------------------------------------
+# get_webServerLogging
+#   description: get logging properties
+#   input: serverID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_webServerLogging(serverID):
+  dataOut({'description': "Log file", 'tagname': "logfile", 'tagtype': "1"});
+
+  componentID=cybcon_was.splitArray(cybcon_was.showAttribute(serverID, 'components'))[0];
+  if componentID != "":
+    dataOut({'name': "logFilenameAccess", 'value': cybcon_was.showAttribute(componentID, 'logFilenameAccess'), 'description': "Access log file name", 'tagname': "logFilenameAccess"});
+    dataOut({'name': "logFilenameError", 'value': cybcon_was.showAttribute(componentID, 'logFilenameError'), 'description': "Error log file name", 'tagname': "logFilenameError"});
+
+  dataOut({'description': "Log file", 'tagname': "logfile", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_webServerRemoteMgmnt
+#   description: get informations about Remote Web server management
+#   input: serverEntry, serverID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_webServerRemoteMgmnt(serverEntry, serverID):
+  dataOut({'description': "Remote Web server management", 'tagname': "remotewebservermanagement", 'tagtype': "1"});
+
+  for endpointPort in cybcon_was.splitArray(cybcon_was.showAttribute(serverEntry, 'specialEndpoints')):
+    if cybcon_was.showAttribute(endpointPort, 'endPointName') == "WEBSERVER_ADMIN_ADDRESS":
+      dataOut({'name': "Port", 'value': cybcon_was.showAttribute(cybcon_was.showAttribute(endpointPort, 'endPoint'), 'port'), 'description': "Port", 'tagname': "Port"});
+
+  componentID=cybcon_was.splitArray(cybcon_was.showAttribute(serverID, 'components'))[0];
+  if componentID != "":
+    adminServerAuthID=cybcon_was.showAttribute(componentID, 'adminServerAuthentication');
+    if adminServerAuthID != "":
+      dataOut({'name': "userid", 'value': cybcon_was.showAttribute(adminServerAuthID, 'userid'), 'description': "Username", 'tagname': "userid"});
+      dataOut({'name': "password", 'value': cybcon_was.showAttribute(adminServerAuthID, 'userid'), 'description': "Password", 'tagname': "password"});
+    webserverAdminProtocol=cybcon_was.showAttribute(componentID, 'webserverAdminProtocol');
+    if webserverAdminProtocol == "HTTP":
+      dataOut({'name': "webserverAdminProtocol", 'value': "false", 'description': "Use SSL", 'tagname': "webserverAdminProtocol"});
+    elif webserverAdminProtocol == "HTTPS":
+      dataOut({'name': "webserverAdminProtocol", 'value': "true", 'description': "Use SSL", 'tagname': "webserverAdminProtocol"});
+    else:
+      dataOut({'name': "webserverAdminProtocol", 'value': webserverAdminProtocol, 'description': "Use SSL", 'tagname': "webserverAdminProtocol"});
+
+  dataOut({'tagname': "remotewebservermanagement", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_webServerPlugin
+#   description: get informations about Plug-in properties
+#   input: serverID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_webServerPlugin(serverID):
+  dataOut({'description': "Plug-in properties", 'tagname': "pluginproperties", 'tagtype': "1"});
+
+  componentID=cybcon_was.splitArray(cybcon_was.showAttribute(serverID, 'components'))[0];
+  if componentID != "":
+    pluginPropID=cybcon_was.splitArray(cybcon_was.showAttribute(componentID, 'pluginProperties'))[0];
+    if pluginPropID != "":
+      dataOut({'name': "IgnoreDNSFailures", 'value': cybcon_was.showAttribute(pluginPropID, 'IgnoreDNSFailures'), 'description': "Ignore DNS failures during Web server startup", 'tagname': "IgnoreDNSFailures"});
+      dataOut({'name': "RefreshInterval", 'value': cybcon_was.showAttribute(pluginPropID, 'RefreshInterval'), 'unit': "seconds", 'description': "Refresh configuration interval", 'tagname': "RefreshInterval"});
+
+      dataOut({'description': "Repository copy of Web server plug-in files", 'tagname': "repositorycopy", 'tagtype': "1"});
+      dataOut({'name': "ConfigFilename", 'value': cybcon_was.showAttribute(pluginPropID, 'ConfigFilename'), 'description': "Plug-in configuration file name", 'tagname': "ConfigFilename"});
+      dataOut({'name': "PluginGeneration", 'value': cybcon_was.showAttribute(pluginPropID, 'PluginGeneration'), 'description': "Automatically generate the plug-in configuration file", 'tagname': "PluginGeneration"});
+      dataOut({'name': "PluginPropagation", 'value': cybcon_was.showAttribute(pluginPropID, 'PluginPropagation'), 'description': "Automatically propagate plug-in configuration file", 'tagname': "PluginPropagation"});
+      dataOut({'name': "KeyRingFilename", 'value': cybcon_was.showAttribute(pluginPropID, 'KeyRingFilename'), 'description': "Plug-in key store file name", 'tagname': "KeyRingFilename"});
+      dataOut({'tagname': "repositorycopy", 'tagtype': "2"});
+
+      dataOut({'description': "Web server copy of Web server plug-in files", 'tagname': "remotewebserverfiles", 'tagtype': "1"});
+      dataOut({'name': "RemoteConfigFilename", 'value': cybcon_was.showAttribute(pluginPropID, 'RemoteConfigFilename'), 'description': "Plug-in configuration directory and file name", 'tagname': "RemoteConfigFilename"});
+      dataOut({'name': "RemoteKeyRingFilename", 'value': cybcon_was.showAttribute(pluginPropID, 'RemoteKeyRingFilename'), 'description': "Plug-in key store directory and file name", 'tagname': "RemoteKeyRingFilename"});
+      dataOut({'tagname': "remotewebserverfiles", 'tagtype': "2"});
+
+      dataOut({'description': "Plug-in logging", 'tagname': "pluginlogging", 'tagtype': "1"});
+      dataOut({'name': "LogFilename", 'value': cybcon_was.showAttribute(pluginPropID, 'LogFilename'), 'description': "Log file name", 'tagname': "LogFilename"});
+      dataOut({'name': "LogLevel", 'value': cybcon_was.showAttribute(pluginPropID, 'LogLevel'), 'description': "Log level", 'tagname': "LogLevel"});
+      dataOut({'tagname': "pluginlogging", 'tagtype': "2"});
+
+      dataOut({'description': "Request and response", 'tagname': "requestandresponse", 'tagtype': "1"});
+      dataOut({'name': "ResponseChunkSize", 'value': cybcon_was.showAttribute(pluginPropID, 'ResponseChunkSize'), 'unit': "KB", 'description': "Maximum chunk size used when reading the HTTP response body", 'tagname': "ResponseChunkSize"});
+      ASDisableNagle=cybcon_was.showAttribute(pluginPropID, 'ASDisableNagle');
+      if ASDisableNagle == "false":
+        nagleenabled="true";
+      elif ASDisableNagle == "true":
+        nagleenabled="false";
+      else:
+        nagleenabled="unknown (" + ASDisableNagle + ")";
+      dataOut({'name': "ASDisableNagle", 'value': nagleenabled, 'description': "Enable the Nagle Algorithm for connections to the Application Server", 'tagname': "ASDisableNagle"});
+      dataOut({'name': "ChunkedResponse", 'value': cybcon_was.showAttribute(pluginPropID, 'ChunkedResponse'), 'description': "Chunk HTTP response to the client", 'tagname': "ChunkedResponse"});
+      dataOut({'name': "AcceptAllContent", 'value': cybcon_was.showAttribute(pluginPropID, 'AcceptAllContent'), 'description': "Accept content for all requests", 'tagname': "AcceptAllContent"});
+      VHostMatchingCompat=cybcon_was.showAttribute(pluginPropID, 'VHostMatchingCompat');
+      if VHostMatchingCompat == "true":
+        vhostmatch="Physically using the port specified in the request";
+      elif VHostMatchingCompat == "false":
+        vhostmatch="Logically using the port number from the host header";
+      else:
+        vhostmatch="unknown value (" + VHostMatchingCompat + ")";
+      dataOut({'name': "VHostMatchingCompat", 'value': vhostmatch, 'description': "Virtual host matching", 'tagname': "VHostMatchingCompat"});
+      dataOut({'name': "AppServerPortPreference", 'value': cybcon_was.showAttribute(pluginPropID, 'AppServerPortPreference'), 'description': "Application server port preference", 'tagname': "AppServerPortPreference"});
+      dataOut({'tagname': "requestandresponse", 'tagtype': "2"});
+
+      dataOut({'description': "Caching", 'tagname': "caching", 'tagtype': "1"});
+      dataOut({'name': "ESIEnable", 'value': cybcon_was.showAttribute(pluginPropID, 'ESIEnable'), 'description': "Enable Edge Side Include (ESI) processing to cache the responses", 'tagname': "ESIEnable"});
+      dataOut({'name': "ESIInvalidationMonitor", 'value': cybcon_was.showAttribute(pluginPropID, 'ESIInvalidationMonitor'), 'description': "Enable invalidation monitor to receive notifications", 'tagname': "ESIInvalidationMonitor"});
+      dataOut({'name': "ESIMaxCacheSize", 'value': cybcon_was.showAttribute(pluginPropID, 'ESIMaxCacheSize'), 'unit': "KB", 'description': "Maximum cache size", 'tagname': "ESIMaxCacheSize"});
+      dataOut({'tagname': "caching", 'tagtype': "2"});
+
+      dataOut({'description': "Request routing", 'tagname': "requestrouting", 'tagtype': "1"});
+      pluginRouteID=cybcon_was.showAttribute(pluginPropID, 'pluginServerClusterProperties');
+      if pluginRouteID != "":
+        dataOut({'name': "LoadBalance", 'value': cybcon_was.showAttribute(pluginRouteID, 'LoadBalance'), 'description': "Load balancing option", 'tagname': "LoadBalance"});
+        dataOut({'name': "RetryInterval", 'value': cybcon_was.showAttribute(pluginRouteID, 'RetryInterval'), 'unit': "seconds", 'description': "Retry interval", 'tagname': "RetryInterval"});
+        PostSizeLimit=cybcon_was.showAttribute(pluginRouteID, 'PostSizeLimit');
+        if PostSizeLimit == "-1":
+          dataOut({'name': "PostSizeLimit", 'value': "No Limit (" + PostSizeLimit + ")", 'description': "Maximum size of request content", 'tagname': "PostSizeLimit"});
+        else:
+          dataOut({'name': "PostSizeLimit", 'value': PostSizeLimit, 'unit':  "KBytes", 'description': "Maximum size of request content", 'tagname': "PostSizeLimit"});
+        dataOut({'name': "PostBufferSize", 'value': cybcon_was.showAttribute(pluginRouteID, 'PostBufferSize'), 'unit':  "KBytes", 'description': "Maximum buffer size used when reading the HTTP request content", 'tagname': "PostBufferSize"});
+        dataOut({'name': "RemoveSpecialHeaders", 'value': cybcon_was.showAttribute(pluginRouteID, 'RemoveSpecialHeaders'), 'description': "Remove special headers", 'tagname': "RemoveSpecialHeaders"});
+        dataOut({'name': "CloneSeparatorChange", 'value': cybcon_was.showAttribute(pluginRouteID, 'CloneSeparatorChange'), 'description': "Clone separator change", 'tagname': "CloneSeparatorChange"});
+      dataOut({'tagname': "requestrouting", 'tagtype': "2"});
+  dataOut({'tagname': "pluginproperties", 'tagtype': "2"});
 
 #############################################################################
 # MAIN program
@@ -2637,6 +2669,11 @@ for nodeName in cybcon_was.get_nodeNames():
     elif serverType == "WEB_SERVER":
       if CONFIG['general']['webserver'] == "true":
         dataOut({'name': "Server", 'value': serverName, 'description': "server", 'tagname': "server", 'tagprops': [ "serverType='" + serverType + "'"], 'tagtype': "1"});
+        if CONFIG['webserver']['WebServerProperties'] == "true": get_webServerProperties(serverEntry, serverID);
+        if CONFIG['webserver']['Logging'] == "true":  get_webServerLogging(serverID);
+        if CONFIG['webserver']['Plugin_properties'] == "true":  get_webServerPlugin(serverID);
+        if CONFIG['webserver']['RemoteWebServerMgmnt'] == "true":  get_webServerRemoteMgmnt(serverEntry, serverID);
+        if CONFIG['webserver']['EndPointPorts'] == "true": get_endPointPortsFromServer(serverEntry);
         dataOut({'tagname': "server", 'tagtype': "2"});
     else:
       dataOut({'name': "Server", 'value': serverName, 'description': "server", 'tagname': "server", 'tagprops': [ "serverType='" + serverType + "'"], 'tagtype': "1"});
