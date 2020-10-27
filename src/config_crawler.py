@@ -29,10 +29,10 @@
 # IN THE SOFTWARE.
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 4 $
-#  $LastChangedDate: 2014-03-17 16:29:32 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 6 $
+#  $LastChangedDate: 2014-03-17 16:34:24 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 4 2014-03-17 15:29:32Z cybcon89 $
+#  $Id: config_crawler.py 6 2014-03-17 15:34:24Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.500";
+VERSION="0.532";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -112,13 +112,14 @@ def get_configuration(configfile):
 # prevent errors by checking the attributes
 
 # possible sections in config file
-  configSections = ['general', 'cell', 'cluster', 'application', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'cybcon_was'];
+  configSections = ['general', 'services', 'cell', 'cluster', 'application', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'cybcon_was'];
 # possible attributes in config file
   configAttributes = {};
   configAttributes['general'] = ['services', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'application', 'LogPasswords', 'output_format'];
+  configAttributes['services'] = ['serviceProviders', 'policySets'];
   configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
-  configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables'];
-  configAttributes['application'] = ['appNames', 'targetMapping', 'runState'];
+  configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries'];
+  configAttributes['application'] = ['targetMapping', 'runState', 'binaries', 'classLoader', 'sharedLibRef'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
@@ -496,6 +497,17 @@ def get_JDBCProviderProperties(objectID):
             dataOut({'name': "reapTime", 'value': cybcon_was.showAttribute(DataSourceCP, 'reapTime'), 'unit': "seconds", 'description': "Reap time", 'tagname': "reaptime"});
             dataOut({'name': "unusedTimeout", 'value': cybcon_was.showAttribute(DataSourceCP, 'unusedTimeout'), 'unit': "seconds", 'description': "Unused timeout", 'tagname': "unusedtimeout"});
             dataOut({'name': "agedTimeout", 'value': cybcon_was.showAttribute(DataSourceCP, 'agedTimeout'), 'unit': "seconds", 'description': "Aged timeout", 'tagname': "agedtimeout"});
+            dataOut({'description': "Advanced connection pool properties", 'tagname': "advancedconnectionpoolproperties", 'tagtype': "1"});
+            dataOut({'name': "numberOfSharedPoolPartitions", 'value': cybcon_was.showAttribute(DataSourceCP, 'numberOfSharedPoolPartitions'), 'description': "Number of shared partitions", 'tagname': "numberOfSharedPoolPartitions"});
+            dataOut({'name': "numberOfFreePoolPartitions", 'value': cybcon_was.showAttribute(DataSourceCP, 'numberOfFreePoolPartitions'), 'description': "Number of free pool partitions", 'tagname': "numberOfFreePoolPartitions"});
+            dataOut({'name': "freePoolDistributionTableSize", 'value': cybcon_was.showAttribute(DataSourceCP, 'freePoolDistributionTableSize'), 'description': "Free pool distribution table size", 'tagname': "freePoolDistributionTableSize"});
+            dataOut({'name': "surgeThreshold", 'value': cybcon_was.showAttribute(DataSourceCP, 'surgeThreshold'), 'unit': "connections", 'description': "Surge threshold", 'tagname': "surgeThreshold"});
+            dataOut({'name': "surgeCreationInterval", 'value': cybcon_was.showAttribute(DataSourceCP, 'surgeCreationInterval'), 'unit': "seconds", 'description': "Surge creation interval", 'tagname': "surgeCreationInterval"});
+            dataOut({'name': "surgeCreationInterval", 'value': cybcon_was.showAttribute(DataSourceCP, 'surgeCreationInterval'), 'unit': "seconds", 'description': "Surge creation interval", 'tagname': "surgeCreationInterval"});
+            dataOut({'name': "stuckTimerTime", 'value': cybcon_was.showAttribute(DataSourceCP, 'stuckTimerTime'), 'unit': "seconds", 'description': "Stuck timer time", 'tagname': "stuckTimerTime"});
+            dataOut({'name': "stuckTime", 'value': cybcon_was.showAttribute(DataSourceCP, 'stuckTime'), 'unit': "seconds", 'description': "Stuck time", 'tagname': "stuckTime"});
+            dataOut({'name': "stuckThreshold", 'value': cybcon_was.showAttribute(DataSourceCP, 'stuckThreshold'), 'unit': "connections", 'description': "Stuck threshold", 'tagname': "stuckThreshold"});
+            dataOut({'tagname': "advancedconnectionpoolproperties", 'tagtype': "2"});
           else:
             dataOut({'value': "No connection pool properties found for this datasource - skip properties!"});
           dataOut({'tagname': "connectionpoolproperties", 'tagtype': "2"});
@@ -875,6 +887,101 @@ def get_securityProperties(cellName):
   dataOut({'tagname': "authentication", 'tagtype': "2"});
 
   dataOut({'description': "SSL certificate and key management", 'tagname': "sslcertificateandkeymanagement", 'tagtype': "1"});
+
+  dataOut({'description': "Key stores and certificates", 'tagname': "keystoresandcerts", 'tagtype': "1"});
+  # define possible certificate attributes to scan for and their description
+  certAttributeList=['alias', 'version', 'size', 'serialNumber', 'issuedTo', 'issuedBy', 'fingerPrint', 'signatureAlgorithm', 'validity' ];
+  try:
+    for keyStoreID in AdminTask.listKeyStores().split(lineSeparator):
+      if keyStoreID != "":
+        dataOut({'tagname': "keystore", 'tagtype': "1"});
+        keyStoreName = cybcon_was.showAttribute(keyStoreID, 'name');
+        dataOut({'name': "name", 'value': keyStoreName, 'description': "Name", 'tagname': "name"});
+        dataOut({'name': "location", 'value': cybcon_was.showAttribute(keyStoreID, 'location'), 'description': "Path", 'tagname': "location"});
+        if CONFIG['general']['LogPasswords'] != "true":
+          v = "***skipped by policy***";
+        else:
+          v = cybcon_was.showAttribute(keyStoreID, 'password');
+        dataOut({'name': "password", 'value': v, 'description': "Password", 'tagname': "password"});
+        dataOut({'name': "type", 'value': cybcon_was.showAttribute(keyStoreID, 'type'), 'description': "Type", 'tagname': "type"});
+        dataOut({'name': "readOnly", 'value': cybcon_was.showAttribute(keyStoreID, 'readOnly'), 'description': "Read only", 'tagname': "readOnly"});
+        dataOut({'name': "initializeAtStartup", 'value': cybcon_was.showAttribute(keyStoreID, 'initializeAtStartup'), 'description': "Initialize at startup", 'tagname': "initializeAtStartup"});
+        dataOut({'name': "useForAcceleration", 'value': cybcon_was.showAttribute(keyStoreID, 'useForAcceleration'), 'description': "Enable cryptographic operations on hardware device", 'tagname': "useForAcceleration"});
+
+        dataOut({'description': "Signer certificates", 'tagname': "signercertificates", 'tagtype': "1"});
+        for signerCert in AdminTask.listSignerCertificates (['-keyStoreName ' + keyStoreName ]).split(lineSeparator):
+          if signerCert != "":
+            signerCert = signerCert.replace("[[", "").replace("] ]", "");
+            # generate empty certificate dictionary
+            certDict = {};
+            for certAttribute in certAttributeList:
+              certDict[certAttribute] = "";
+            # loop over attribute lines
+            for signerCertAttrib in signerCert.split('] ['):
+              # loop over possible certificate attributes and scan line for the attributes
+              for certAttribute in certAttributeList:
+                if signerCertAttrib.find(certAttribute) != -1:
+                  certDict[certAttribute] = signerCertAttrib.replace(certAttribute, "").replace("[", "").replace("]", "").strip();
+                  continue;
+            #output certificate informations:
+            if certDict['alias'] != "":
+              dataOut({'tagname': "certificate", 'tagtype': "1"});
+              dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
+              dataOut({'name': 'version', 'value': certDict['version'], 'description': 'Version', 'tagname': 'version'});
+              dataOut({'name': 'size', 'value': certDict['size'], 'description': 'Key size', 'unit': 'bits', 'tagname': 'size'});
+              dataOut({'name': 'serialNumber', 'value': certDict['serialNumber'], 'description': 'Serial number', 'tagname': 'serialNumber'});
+              dataOut({'name': 'validity', 'value': certDict['validity'], 'description': 'Validity period', 'tagname': 'validity'});
+              dataOut({'name': 'issuedTo', 'value': certDict['issuedTo'], 'description': 'Issued to', 'tagname': 'issuedTo'});
+              dataOut({'name': 'issuedBy', 'value': certDict['issuedBy'], 'description': 'Issued by', 'tagname': 'issuedBy'});
+              dataOut({'name': 'fingerPrint', 'value': certDict['fingerPrint'], 'description': 'Fingerprint (SHA digest)', 'tagname': 'fingerPrint'});
+              dataOut({'name': 'signatureAlgorithm', 'value': certDict['signatureAlgorithm'], 'description': 'Signature algorithm', 'tagname': 'signatureAlgorithm'});
+              dataOut({'tagname': "certificate", 'tagtype': "2"});
+            else:
+              dataOut({'value': "No signer certificate exist in keystore."});
+          else:
+            dataOut({'value': "No signer certificate exist in keystore."});
+        dataOut({'tagname': "signercertificates", 'tagtype': "2"});
+
+        dataOut({'description': "Personal certificates", 'tagname': "personalcertificates", 'tagtype': "1"});
+        for personalCert in AdminTask.listPersonalCertificates (['-keyStoreName ' + keyStoreName ]).split(lineSeparator):
+          if personalCert != "":
+            personalCert = personalCert.replace("[[", "").replace("] ]", "");
+            # generate empty certificate dictionary
+            certDict = {};
+            for certAttribute in certAttributeList:
+              certDict[certAttribute] = "";
+            # loop over attribute lines
+            for personalCertAttrib in personalCert.split('] ['):
+              # loop over possible certificate attributes and scan line for the attributes
+              for certAttribute in certAttributeList:
+                if personalCertAttrib.find(certAttribute) != -1:
+                  certDict[certAttribute] = personalCertAttrib.replace(certAttribute, "").replace("[", "").replace("]", "").strip();
+                  continue;
+            #output certificate informations:
+            if certDict['alias'] != "":
+              dataOut({'tagname': "certificate", 'tagtype': "1"});
+              dataOut({'name': 'alias', 'value': certDict['alias'], 'description': 'Alias', 'tagname': 'alias'});
+              dataOut({'name': 'version', 'value': certDict['version'], 'description': 'Version', 'tagname': 'version'});
+              dataOut({'name': 'size', 'value': certDict['size'], 'description': 'Key size', 'unit': 'bits', 'tagname': 'size'});
+              dataOut({'name': 'serialNumber', 'value': certDict['serialNumber'], 'description': 'Serial number', 'tagname': 'serialNumber'});
+              dataOut({'name': 'validity', 'value': certDict['validity'], 'description': 'Validity period', 'tagname': 'validity'});
+              dataOut({'name': 'issuedTo', 'value': certDict['issuedTo'], 'description': 'Issued to', 'tagname': 'issuedTo'});
+              dataOut({'name': 'issuedBy', 'value': certDict['issuedBy'], 'description': 'Issued by', 'tagname': 'issuedBy'});
+              dataOut({'name': 'fingerPrint', 'value': certDict['fingerPrint'], 'description': 'Fingerprint (SHA digest)', 'tagname': 'fingerPrint'});
+              dataOut({'name': 'signatureAlgorithm', 'value': certDict['signatureAlgorithm'], 'description': 'Signature algorithm', 'tagname': 'signatureAlgorithm'});
+              dataOut({'tagname': "certificate", 'tagtype': "2"});
+            else:
+              dataOut({'value': "No personal certificate exist in keystore."});
+          else:
+            dataOut({'value': "No personal certificate exist in keystore."});
+        dataOut({'tagname': "personalcertificates", 'tagtype': "2"});
+
+      dataOut({'tagname': "keystore", 'tagtype': "2"});
+  except AttributeError:
+    dataOut({'description': "WARNING", 'value': "The Server not supports AdminTask.listKeyStores().", 'tagname': "WARNING"});
+
+  dataOut({'tagname': "keystoresandcerts", 'tagtype': "2"});
+
   dataOut({'description': "Key set Groups", 'tagname': "keysetgroups", 'tagtype': "1"});
   for keySetGroupID in cybcon_was.splitArray(cybcon_was.showAttribute(securityID, 'keySetGroups')):
     dataOut({'tagname': "keysetgroup", 'tagtype': "1"});
@@ -953,7 +1060,7 @@ def get_variables(objectID):
 # get_sharedLibraryProperties
 #   description: output the relevant informations of installed shared
 #     libraries on objectID level
-#   input: objectID (can be cellID, nodeID or serverID)
+#   input: objectID (can be cellID, clusterID, nodeID or serverID)
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
@@ -1021,6 +1128,7 @@ def get_appServerProperties(serverID, serverName):
   dataOut({'description': "Web Container", 'tagname': "webcontainer", 'tagtype': "1"});
   for WCID in AdminConfig.list('WebContainer', serverID).split(lineSeparator):
     if WCID != "":
+      dataOut({'name': "defaultVirtualHostName", 'value': cybcon_was.showAttribute(WCID, 'defaultVirtualHostName'), 'description': "Default virtual host", 'tagname': "defaultVirtualHostName"});
       dataOut({'name': "enableServletCaching", 'value': cybcon_was.showAttribute(WCID, 'enableServletCaching'), 'description': "Enable servlet caching", 'tagname': "enableServletCaching"});
       dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
       CusProp="";
@@ -1747,6 +1855,102 @@ def get_SIBusProperties(cellID):
   dataOut({'tagname': "buses", 'tagtype': "2"});
   dataOut({'tagname': "serviceintegration", 'tagtype': "2"});
 
+
+#----------------------------------------------------------------------------
+# get_serviceProviders
+#   description: output the service provider informations
+#   input: -
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_serviceProviders():
+  dataOut({'description': "Service providers", 'tagname': "serviceproviders", 'tagtype': "1"});
+
+  # Attribute list of WebServices
+  webServiceAttrList=['service', 'client', 'application', 'module', 'type' ];
+  # Attribute list of Policy set attachments
+  psaAttrList=['policySet', 'resource', 'attachmentId', 'directAttachment', 'binding' ];
+
+  # loop over webservices
+  try:
+    for webService in AdminTask.listWebServices().split(lineSeparator):
+      if webService != "":
+        webService = webService.replace("[ [", "").replace("] ]", "");
+        # generate empty webService dictionary
+        wsDict = {};
+        for wsAttribute in webServiceAttrList:
+          wsDict[wsAttribute] = "";
+
+        # loop over attribute lines
+        for webServiceAttribute in webService.split('] ['):
+          for wsAttribute in webServiceAttrList:
+            if webServiceAttribute.find(wsAttribute) != -1:
+              wsDict[wsAttribute] = webServiceAttribute.replace(wsAttribute, "").strip();
+              continue;
+  
+        #output informations:
+        if wsDict['service'] != "":
+          dataOut({'tagname': "serviceprovider", 'tagtype': "1"});
+          name = wsDict['service'].split('}')[1];
+          dataOut({'name': 'name', 'value': name, 'description': 'Name', 'tagname': 'name'});
+          dataOut({'name': 'service', 'value': wsDict['service'], 'description': 'Service provider', 'tagname': 'service'});
+          dataOut({'name': 'type', 'value': wsDict['type'], 'description': 'Type', 'tagname': 'type'});
+          dataOut({'name': 'application', 'value': wsDict['application'], 'description': 'Application', 'tagname': 'application'});
+          dataOut({'name': 'module', 'value': wsDict['module'], 'description': 'Module', 'tagname': 'module'});
+          dataOut({'name': 'client', 'value': wsDict['client'], 'description': 'Client', 'tagname': 'client'});
+          dataOut({'description': "Policy set attachments", 'tagname': "policysetattachments", 'tagtype': "1"});
+
+          # loop over Policy set attachments for the given webservice
+          for psa in AdminTask.getPolicySetAttachments('[-applicationName ' + wsDict['application'] + ' -attachmentType application -expandResources ' + wsDict['service'] + ']').split(lineSeparator):
+            if psa != "":
+              psa = psa.replace("[ [", "").replace("] ]", "");
+              # generate empty policy set attachment dictionary
+              psaDict = {};
+              for psaAttribute in psaAttrList:
+                psaDict[psaAttribute] = "";
+
+              # loop over attribute lines
+              for psaAtVal in psa.split('] ['):
+                for psaAttribute in psaAttrList:
+                  if psaAtVal.find(psaAttribute) != -1:
+                    psaDict[psaAttribute] = psaAtVal.replace(psaAttribute, "").replace('[', "").replace(']', "").strip();
+                    continue;
+
+              #output informations:
+              if psaDict['resource'] != "":
+                dataOut({'tagname': "policysetattachment", 'tagtype': "1"});
+                #res=psaDict['resource'].split('}')[-1].split('/')[-1];
+                res=psaDict['resource'].split('}')[-1];
+                dataOut({'name': 'resource', 'value': res, 'description': 'Service/Endpoint/Operation', 'tagname': 'resource'});
+                #if psaDict['policySet'] == "": psaDict['policySet'] = "None";
+                dataOut({'name': 'policySet', 'value': psaDict['policySet'], 'description': 'Attached policy set', 'tagname': 'policySet'});
+                #if psaDict['binding'] == "": psaDict['binding'] = "Not applicable";
+                dataOut({'name': 'binding', 'value': psaDict['binding'], 'description': 'Binding', 'tagname': 'binding'});
+                #if psaDict['directAttachment'] == "true":
+                #  dataOut({'description': 'Binding policies', 'tagname': "bindingpolicies", 'tagtype': "1"});
+                #  for policyType in AdminTask.listPolicyTypes('[-bindingLocation "[ [application ' + wsDict['application'] + '] [attachmentId ' + psaDict['attachmentId'] + '] ]" -attachmentType application]'):
+                #    dataOut({'tagname': "bindingpolicy", 'tagtype': "1"});
+                #    dataOut({'name': 'policyType', 'value': policyType, 'description': 'Policy', 'tagname': 'policyType'});
+                #    dataOut({'tagname': "bindingpolicy", 'tagtype': "2"});
+                #  dataOut({'tagname': "bindingpolicies", 'tagtype': "2"});
+                #dataOut({'name': 'directAttachment', 'value': psaDict['directAttachment'], 'description': 'Direct Attachment', 'tagname': 'directAttachment'});
+                #dataOut({'name': 'attachmentId', 'value': psaDict['attachmentId'], 'description': 'Attachment ID', 'tagname': 'attachmentId'});
+                dataOut({'tagname': "policysetattachment", 'tagtype': "2"});
+              else:
+                dataOut({'value': "No policy set attachment in webservice."});
+            else:
+              dataOut({'value': "No policy set attachment in webservice."});
+          dataOut({'tagname': "policysetattachments", 'tagtype': "2"});
+          dataOut({'tagname': "serviceprovider", 'tagtype': "2"});
+        else:
+          dataOut({'value': "No service provider defined."});
+      else:
+        dataOut({'value': "No service provider defined."});
+  except AttributeError:
+    dataOut({'description': "WARNING", 'value': "The Server not supports AdminTask.listWebServices().", 'tagname': "WARNING"});
+
+  dataOut({'tagname': "serviceproviders", 'tagtype': "2"});
+
 #----------------------------------------------------------------------------
 # get_ApplicationPolicySets
 #   description: output the application policy sets
@@ -1960,36 +2164,140 @@ def get_clusterMembers(clusterID):
   dataOut({'tagname': "clustermembers", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
-# get_enterpriseApplications
-#   description: output information about installed applications
-#   input: flag targetMapping, flag runState
+# get_enterpriseApplicationBinaries
+#   description: output information about the applications binaries
+#   input: string appName, string appID
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
-def get_enterpriseApplications(targetMapping, runState):
-  dataOut({'tagname': "applications", 'description': "Applications", 'tagtype': "1"});
-  dataOut({'tagname': "enterpriseapplications", 'description': "Enterprise Applications", 'tagtype': "1"});
+def get_enterpriseApplicationBinaries(appName, appID):
+  # set default values
+  appLocation = "";
+  appBinaryConf = "";
+  appBinaryDist = "";
+  appBuildID = "";
 
-  if CONFIG['application']['appNames'] == "true":
-    for appName in cybcon_was.get_applications():
-      if targetMapping == "true" or runState == "true":
-        dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname", 'tagtype': "1"});
-        if targetMapping == "true":
-          for serverName in cybcon_was.get_applicationTargetServerNames(appName):
-            if runState == "true":
-              dataOut({'name': "servername", 'value': serverName, 'description': "Application target server", 'tagname': "servername", 'tagtype': "1"});
-              dataOut({'name': "applicationstatus", 'value': cybcon_was.get_applicationStateOnServer(appName, serverName), 'description': "Application Status", 'tagname': "applicationstatus"});
-              dataOut({'tagname': "servername", 'tagtype': "2"});
-            else:
-              dataOut({'name': "servername", 'value': serverName, 'description': "Application target server", 'tagname': "servername"});
-        else:
-          dataOut({'name': "applicationstatus", 'value': cybcon_was.get_applicationState(appName), 'description': "Application Status", 'tagname': "applicationstatus"});
-        dataOut({'tagname': "appname", 'tagtype': "2"});
+  # read some applications data from AdminApp.view
+  for appConfig in AdminApp.view(appName).split(lineSeparator):
+    if appConfig.find("Directory to install application") != -1:
+      appLocation = appConfig.replace("Directory to install application", "").replace(":", "").strip();
+      continue;
+    if appConfig.find("Use Binary Configuration") != -1:
+      appBinaryConf = appConfig.replace("Use Binary Configuration", "").replace(":", "").strip();
+      continue;
+    if appConfig.find("Distribute application") != -1:
+      appBinaryDist = appConfig.replace("Distribute application", "").replace(":", "").strip();
+      continue;
+    if appConfig.find("Application Build ID") != -1:
+      appBuildID = appConfig.replace("Application Build ID", "").replace(":", "").strip();
+      continue;
+
+  # output data
+  dataOut({'tagname': "appbinaries", 'description': "Application binaries", 'tagtype': "1"});
+  dataOut({'name': "installedeardestination", 'value': appLocation, 'description': "Location (full path)", 'tagname': "installedeardestination"});
+  dataOut({'name': "binariesURL", 'value': cybcon_was.showAttribute(appID, 'binariesURL'), 'description': "Location (binariesURL)", 'tagname': "binariesURL"});
+  dataOut({'name': "appConfigInBinary", 'value': appBinaryConf, 'description': "Use configuration information in binary", 'tagname': "appConfigInBinary"});
+  dataOut({'name': "distributeApp", 'value': appBinaryDist, 'description': "Enable binary distribution, expansion and cleanup post uninstallation", 'tagname': "distributeApp"});
+  dataOut({'name': "filepermission", 'value': cybcon_was.showAttribute(appID, 'filePermission'), 'description': "File permissions", 'tagname': "filepermission"});
+  dataOut({'name': "buildversion", 'value': appBuildID, 'description': "Application build level", 'tagname': "buildversion"});
+  dataOut({'tagname': "appbinaries", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationClassloading
+#   description: output information about the applications classloaders
+#   input: string appID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationClassloading(appID):
+
+  dataOut({'tagname': "appclassloaders", 'description': "Class loading and update detection", 'tagtype': "1"});
+
+  dataOut({'name': "reloadEnabled", 'value': cybcon_was.showAttribute(appID, 'reloadEnabled'), 'description': "Reload classes when application files are updated", 'tagname': "reloadEnabled"});
+  dataOut({'name': "reloadInterval", 'value': cybcon_was.showAttribute(appID, 'reloadInterval'), 'unit': "seconds", 'description': "Polling interval for updated files", 'tagname': "reloadInterval"});
+
+  dataOut({'tagname': "classloader", 'tagtype': "1"});
+  classLoaderID = cybcon_was.showAttribute(appID, 'classloader');
+  if classLoaderID != -1:
+    dataOut({'name': "mode", 'value': cybcon_was.showAttribute(classLoaderID, 'mode'), 'description': "Class loader order", 'tagname': "mode"});
+  else:
+    dataOut({'value': "No classloader defined."});
+  dataOut({'tagname': "classloader", 'tagtype': "2"});
+
+  dataOut({'tagname': "warclassloader", 'tagtype': "1"});
+  dataOut({'name': "warClassLoaderPolicy", 'value': cybcon_was.showAttribute(appID, 'warClassLoaderPolicy'), 'description': "WAR class loader policy", 'tagname': "warClassLoaderPolicy"});
+  dataOut({'tagname': "warclassloader", 'tagtype': "2"});
+  
+  dataOut({'tagname': "appclassloaders", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationLibraryReferences
+#   description: output information about the applications shared libs
+#   input: string appID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationLibraryReferences(appID):
+
+  dataOut({'tagname': "sharedlibref", 'description': "Shared library references", 'tagtype': "1"});
+
+  dataOut({'tagname': "appsharedlibref", 'description': "Application", 'tagtype': "1"});
+  classLoaderID = cybcon_was.showAttribute(appID, 'classloader');
+  if classLoaderID != -1:
+    appSharedLibraryID = "";
+    for appSharedLibraryID in cybcon_was.splitArray(cybcon_was.showAttribute(classLoaderID, 'libraries')):
+      dataOut({'name': "libraryName", 'value': cybcon_was.showAttribute(appSharedLibraryID, 'libraryName'), 'description': "Library Name", 'tagname': "libraryName"});
+    if appSharedLibraryID == "":
+      dataOut({'value': "No Shared Library References defined."});
+  else:
+    dataOut({'value': "No Shared Library References defined."});
+  dataOut({'tagname': "appsharedlibref", 'tagtype': "2"});
+
+  dataOut({'tagname': "webmodules", 'description': "Module(s)", 'tagtype': "1"});
+  webModExist = "false";
+  for webModuleID in cybcon_was.splitArray(cybcon_was.showAttribute(appID, 'modules')):
+    uri = cybcon_was.showAttribute(webModuleID, 'uri');
+    # check for webarchive - skip jar files
+    if uri.find(".war") != -1:
+      webModExist = "true";
+      dataOut({'tagname': "webmodule", 'tagtype': "1"});
+      dataOut({'name': "uri", 'value': uri + ",WEB-INF/web.xml", 'description': "URI", 'tagname': "uri"});
+      dataOut({'tagname': "webmodsharedlibref", 'tagtype': "1"});
+      classLoaderID = cybcon_was.showAttribute(webModuleID, 'classloader');
+      if classLoaderID != -1:
+        modSharedLibraryID = "";
+        for modSharedLibraryID in cybcon_was.splitArray(cybcon_was.showAttribute(classLoaderID, 'libraries')):
+          dataOut({'name': "libraryName", 'value': cybcon_was.showAttribute(modSharedLibraryID, 'libraryName'), 'description': "Library Name", 'tagname': "libraryName"});
+        if modSharedLibraryID == "":
+          dataOut({'value': "No Shared Library References defined."});
       else:
-        dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname"});
+        dataOut({'value': "No Shared Library References defined."});
+      dataOut({'tagname': "webmodsharedlibref", 'tagtype': "2"});
+      dataOut({'tagname': "webmodule", 'tagtype': "2"});
+  if webModExist == "false":
+    dataOut({'value': "No web module in enterprise application."});
+  dataOut({'tagname': "webmodules", 'tagtype': "2"});
+    
+  dataOut({'tagname': "sharedlibref", 'tagtype': "2"});
 
-  dataOut({'tagname': "enterpriseapplications", 'tagtype': "2"});
-  dataOut({'tagname': "applications", 'tagtype': "2"});
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationTargetAndState
+#   description: output targetMappings and RunState
+#   input: string appName, flag targetMapping, flag runState
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationTargetAndState(appName, targetMapping, runState):
+  if targetMapping == "true":
+    for serverName in cybcon_was.get_applicationTargetServerNames(appName):
+      if runState == "true":
+        dataOut({'name': "servername", 'value': serverName, 'description': "Application target server", 'tagname': "servername", 'tagtype': "1"});
+        dataOut({'name': "applicationstatus", 'value': cybcon_was.get_applicationStateOnServer(appName, serverName), 'description': "Application Status", 'tagname': "applicationstatus"});
+        dataOut({'tagname': "servername", 'tagtype': "2"});
+      else:
+        dataOut({'name': "servername", 'value': serverName, 'description': "Application target server", 'tagname': "servername"});
+  else:
+    dataOut({'name': "applicationstatus", 'value': cybcon_was.get_applicationState(appName), 'description': "Application Status", 'tagname': "applicationstatus"});
 
 #----------------------------------------------------------------------------
 # get_CORBANamingService
@@ -2139,7 +2447,8 @@ dataOut({'tagname': "configuration", 'tagtype': "1"});
 # global configuration
 if CONFIG['general']['services'] == "true":
   dataOut({'description': "Services", 'tagname': "services", 'tagtype': "1"});
-  get_ApplicationPolicySets();
+  if CONFIG['services']['serviceProviders'] == "true": get_serviceProviders();
+  if CONFIG['services']['policySets'] == "true": get_ApplicationPolicySets();
   dataOut({'tagname': "services", 'tagtype': "2"});
 
 #===========================================================================
@@ -2197,13 +2506,27 @@ if CONFIG['general']['cluster'] == "true":
     if CONFIG['cluster']['URL_provider'] == "true": get_URLProviderProperties(clusterID);
     if CONFIG['cluster']['ResourceEnv'] == "true": get_ResourceEnvironmentProperties(clusterID);
     if CONFIG['cluster']['Websphere_variables'] == "true": get_variables(clusterID);
+    if CONFIG['cluster']['Shared_libraries'] == "true": get_sharedLibraryProperties(clusterID);
     dataOut({'tagname': "resources", 'tagtype': "2"});
     dataOut({'tagname': "cluster", 'tagtype': "2"});
   dataOut({'tagname': "clusters", 'tagtype': "2"});
 
 #===========================================================================
 # loop over applications
-if CONFIG['general']['application'] == "true": get_enterpriseApplications(CONFIG['application']['targetMapping'], CONFIG['application']['runState']);
+if CONFIG['general']['application'] == "true":
+  dataOut({'tagname': "applications", 'description': "Applications", 'tagtype': "1"});
+  dataOut({'tagname': "enterpriseapplications", 'description': "Enterprise Applications", 'tagtype': "1"});
+  for appName in cybcon_was.get_applications():
+    appID = cybcon_was.get_applicationIDByName(appName);
+    dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname", 'tagtype': "1"});
+    if CONFIG['application']['targetMapping'] == "true" or CONFIG['application']['runState'] == "true":
+      get_enterpriseApplicationTargetAndState(appName, CONFIG['application']['targetMapping'], CONFIG['application']['runState']);
+    if CONFIG['application']['binaries'] == "true": get_enterpriseApplicationBinaries(appName, appID);
+    if CONFIG['application']['classLoader'] == "true": get_enterpriseApplicationClassloading(appID);
+    if CONFIG['application']['sharedLibRef'] == "true": get_enterpriseApplicationLibraryReferences(appID);
+    dataOut({'tagname': "appname", 'tagtype': "2"});
+  dataOut({'tagname': "enterpriseapplications", 'tagtype': "2"});
+  dataOut({'tagname': "applications", 'tagtype': "2"});
 
 #===========================================================================
 # loop over nodes
