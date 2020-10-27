@@ -1,14 +1,15 @@
 ################################################################################
 # WebSphere configuration crawler
-# description: script to crawl the WAS configuration and output them to
+# description: script to crawl the WAS configuration and output them to stdout
 #
 # Author: Michael Oberdorf
 # Date: 2009-05-15
 # Tool can be downloaded at: http://www.cybcon-industries.de/
+# SourceForge project page: http://sourceforge.net/projects/was-configcrawler/
 #-------------------------------------------------------------------------------
 # COPYRIGHT AND LICENSE
 #
-# (C) Copyright 2009-2014, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
+# (C) Copyright 2009-2014, Cybcon Industries, Michael Oberdorf <cybcon@gmx.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -28,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 30 $
-#  $LastChangedDate: 2014-03-17 16:51:50 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 32 $
+#  $LastChangedDate: 2014-03-18 10:32:22 +0100 (Tue, 18 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 30 2014-03-17 15:51:50Z cybcon89 $
+#  $Id: config_crawler.py 32 2014-03-18 09:32:22Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.600";
+VERSION="0.601";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -3160,6 +3161,7 @@ dataOut({'tagname': "head", 'tagtype': "1"});
 dataOut({'tagname': "meta", 'name': "copyright", 'value': "Cybcon Industries 2009-" + time.strftime("%Y"), 'tagtype': "3"});
 dataOut({'tagname': "meta", 'name': "product", 'value': "WebSphere configuration crawler", 'tagprops': [ "version='" + VERSION + "'", "library='cybcon_was v" + CYBCON_WAS_VERSION + "'" ], 'tagtype': "3"});
 dataOut({'tagname': "meta", 'name': "author", 'value': "Michael Oberdorf", 'description': "Author", 'tagtype': "3"});
+dataOut({'tagname': "meta", 'name': "sourceforgeURL", 'value': "http://sourceforge.net/projects/was-configcrawler/", 'description': "SourceForge project URL", 'tagtype': "3"});
 dataOut({'tagname': "meta", 'name': "date", 'value': time.strftime("%Y-%m-%d %H:%M:%S"), 'description': "Starting time at", 'tagtype': "3"});
 dataOut({'tagname': "head", 'tagtype': "2"});
 dataOut({'tagname': "configuration", 'tagtype': "1"});

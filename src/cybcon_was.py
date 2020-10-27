@@ -6,10 +6,11 @@
 # Date: 2009-06-30
 # (C) Copyright by Cybcon Industries 2009
 # Library can be downloaded at: http://www.cybcon-industries.de/
+# SourceForge project page: http://sourceforge.net/projects/was-configcrawler/
 #-------------------------------------------------------------------------------
 # COPYRIGHT AND LICENSE
 #
-# (C) Copyright 2009-2014, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
+# (C) Copyright 2009-2014, Cybcon Industries, Michael Oberdorf <cybcon@gmx.net>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -29,10 +30,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 30 $
-#  $LastChangedDate: 2014-03-17 16:51:50 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 32 $
+#  $LastChangedDate: 2014-03-18 10:32:22 +0100 (Tue, 18 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 30 2014-03-17 15:51:50Z cybcon89 $
+#  $Id: cybcon_was.py 32 2014-03-18 09:32:22Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
