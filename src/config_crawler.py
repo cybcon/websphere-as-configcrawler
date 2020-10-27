@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 26 $
-#  $LastChangedDate: 2014-03-17 16:44:58 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 28 $
+#  $LastChangedDate: 2014-03-17 16:46:40 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 26 2014-03-17 15:44:58Z cybcon89 $
+#  $Id: config_crawler.py 28 2014-03-17 15:46:40Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.580";
+VERSION="0.581";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -1203,9 +1203,9 @@ def get_virtualHostProperties(cellID):
     if virtualHostID != "":
       dataOut({'tagname': "virtualhost", 'tagtype': "1"});
       dataOut({'name': "name", 'value': cybcon_was.showAttribute(virtualHostID, 'name'), 'description': "Name", 'tagname': "name"});
+
       dataOut({'description': "Host Aliases", 'tagname': "hostaliases", 'tagtype': "1"});
-      for hostAliasID in cybcon_was.showAttribute(virtualHostID, 'aliases').split():
-        hostAliasID = hostAliasID.replace("[", "").replace("]", "");
+      for hostAliasID in cybcon_was.splitArray(cybcon_was.showAttribute(virtualHostID, 'aliases')):
         if hostAliasID != "":
           dataOut({'tagname': "hostalias", 'tagtype': "1"});
           dataOut({'name': "hostname", 'value': cybcon_was.showAttribute(hostAliasID, 'hostname'), 'description': "Host Name", 'tagname': "hostname"});
@@ -1214,12 +1214,23 @@ def get_virtualHostProperties(cellID):
         else:
           dataOut({'value': "No host alias defined for this virtual host."});
       dataOut({'tagname': "hostaliases", 'tagtype': "2"});
+
+      dataOut({'description': "MIME Types", 'tagname': "mimeTypes", 'tagtype': "1"});
+      for mimeTypeID in cybcon_was.splitArray(cybcon_was.showAttribute(virtualHostID, 'mimeTypes')):
+        if mimeTypeID != "":
+          dataOut({'tagname': "MimeEntry", 'tagtype': "1"});
+          dataOut({'name': "type", 'value': cybcon_was.showAttribute(mimeTypeID, 'type'), 'description': "MIME Type", 'tagname': "type"});
+          dataOut({'name': "extensions", 'value': cybcon_was.showAttribute(mimeTypeID, 'extensions').replace(';', ' '), 'description': "Extensions", 'tagname': "extensions"});
+          dataOut({'tagname': "MimeEntry", 'tagtype': "2"});
+        else:
+          dataOut({'value': "No MIME Types defined for this virtual host."});
+      dataOut({'tagname': "mimeTypes", 'tagtype': "2"});
+
       dataOut({'tagname': "virtualhost", 'tagtype': "2"});
     else:
       dataOut({'value': "No virtual hosts defined in cell."});
       continue;
   dataOut({'tagname': "virtualhosts", 'tagtype': "2"});
-
 
 #----------------------------------------------------------------------------
 # get_variables
