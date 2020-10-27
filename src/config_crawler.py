@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 36 $
-#  $LastChangedDate: 2014-03-18 13:36:31 +0100 (Tue, 18 Mar 2014) $
+#  $Revision: 39 $
+#  $LastChangedDate: 2014-03-28 10:14:46 +0100 (Fri, 28 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 36 2014-03-18 12:36:31Z cybcon89 $
+#  $Id: config_crawler.py 39 2014-03-28 09:14:46Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.603";
+VERSION="0.604";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -1112,6 +1112,8 @@ def get_securityDomain():
     # get security domain names and description
     secDomains={};
     for securityDomain in AdminTask.listSecurityDomains('[-listDescription true]').split(lineSeparator):
+      securityDomain=securityDomain.strip();
+      if securityDomain == '': continue;
       name, desc = securityDomain.split('description', 1);
       foo, name = name.split('name', 1);
       name = name.replace('[', '').replace(']', '').strip();
@@ -1120,6 +1122,8 @@ def get_securityDomain():
 
     # loop over AppSecurity objects and output some informations
     for secDomID in AdminConfig.getid('/AppSecurity:/').split(lineSeparator):
+      secDomID=secDomID.strip();
+      if secDomID == '': continue;
       dataOut({'tagname': 'securitydomain', 'tagtype': '1'});
       # extract name from ID
       secDomName, foo = secDomID.split('|',1);
