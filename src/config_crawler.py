@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 24 $
-#  $LastChangedDate: 2014-03-17 16:44:21 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 26 $
+#  $LastChangedDate: 2014-03-17 16:44:58 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 24 2014-03-17 15:44:21Z cybcon89 $
+#  $Id: config_crawler.py 26 2014-03-17 15:44:58Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.579";
+VERSION="0.580";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -117,7 +117,7 @@ def get_configuration(configfile):
   configAttributes['general'] = ['services', 'cell', 'cluster', 'node', 'dmgr', 'nodeagent', 'appserver', 'webserver', 'application', 'LogPasswords', 'output_format'];
   configAttributes['services'] = ['serviceProviders', 'policySets'];
   configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
-  configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries'];
+  configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
@@ -3022,6 +3022,10 @@ if CONFIG['general']['cluster'] == "true":
     if CONFIG['cluster']['ResourceEnv'] == "true": get_ResourceEnvironmentProperties(clusterID);
     if CONFIG['cluster']['Websphere_variables'] == "true": get_variables(clusterID);
     if CONFIG['cluster']['Shared_libraries'] == "true": get_sharedLibraryProperties(clusterID);
+    if CONFIG['cluster']['NameSpaceBindings'] == "true":
+      dataOut({'description': "Naming", 'tagname': "naming", 'tagtype': "1"});
+      get_nameSpaceBindingProperties(clusterID);
+      dataOut({'tagname': "naming", 'tagtype': "2"});
     dataOut({'tagname': "resources", 'tagtype': "2"});
     dataOut({'tagname': "cluster", 'tagtype': "2"});
   dataOut({'tagname': "clusters", 'tagtype': "2"});
