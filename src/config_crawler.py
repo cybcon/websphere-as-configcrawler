@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 # COPYRIGHT AND LICENSE
 #
-# (C) Copyright 2009-2013, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
+# (C) Copyright 2009-2014, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 28 $
-#  $LastChangedDate: 2014-03-17 16:46:40 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 30 $
+#  $LastChangedDate: 2014-03-17 16:51:50 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 28 2014-03-17 15:46:40Z cybcon89 $
+#  $Id: config_crawler.py 30 2014-03-17 15:51:50Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.581";
+VERSION="0.600";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -118,7 +118,7 @@ def get_configuration(configfile):
   configAttributes['services'] = ['serviceProviders', 'policySets'];
   configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
   configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
-  configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions'];
+  configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions', 'MapRolesToUsers', 'MapResRefToEJB', 'MapEJBRefToEJB'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
@@ -143,7 +143,7 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.021";
+  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.030";
 
 # give configuration object back
   return configHash;
@@ -1023,6 +1023,12 @@ def get_securityProperties(cellName):
   dataOut({'tagname': "jaasconfiguration", 'tagtype': "2"});
   dataOut({'tagname': "authentication", 'tagtype': "2"});
 
+  #------------------------
+  # get security domain configuration
+  get_securityDomain();
+
+  #------------------------
+  # SSL certificate and key management
   dataOut({'description': "SSL certificate and key management", 'tagname': "sslcertificateandkeymanagement", 'tagtype': "1"});
 
   dataOut({'description': "Key stores and certificates", 'tagname': "keystoresandcerts", 'tagtype': "1"});
@@ -1089,6 +1095,97 @@ def get_securityProperties(cellName):
   dataOut({'tagname': "sslcertificateandkeymanagement", 'tagtype': "2"});
   dataOut({'tagname': "security", 'tagtype': "2"});
 
+
+#----------------------------------------------------------------------------
+# get_securityDomain
+#   description: output security domains and their configurations
+#   input: -
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_securityDomain():
+  dataOut({'description': 'Security domains', 'tagname': 'securitydomains', 'tagtype': '1'});
+
+  # check if server supports AdminTask.listSecurityDomains()
+  try:
+    # get security domain names and description
+    secDomains={};
+    for securityDomain in AdminTask.listSecurityDomains('[-listDescription true]').split(lineSeparator):
+      name, desc = securityDomain.split('description', 1);
+      foo, name = name.split('name', 1);
+      name = name.replace('[', '').replace(']', '').strip();
+      desc = desc.replace('[', '').replace(']', '').strip();
+      secDomains[name] = desc;
+
+    # loop over AppSecurity objects and output some informations
+    for secDomID in AdminConfig.getid('/AppSecurity:/').split(lineSeparator):
+      dataOut({'tagname': 'securitydomain', 'tagtype': '1'});
+      # extract name from ID
+      secDomName, foo = secDomID.split('|',1);
+      secDomName = secDomName.split('/')[-1];
+      # check if we have an description
+      secDomDesc = '';
+      if secDomains.has_key(secDomName) == 1:
+        secDomDesc = secDomains[secDomName];
+      # output data
+      dataOut({'name': 'Name', 'value': secDomName, 'description': 'Name', 'tagname': 'name'});
+      dataOut({'name': 'Description', 'value': secDomDesc, 'description': 'Description', 'tagname': 'description'});
+      dataOut({'name': 'appEnabled', 'value': cybcon_was.showAttribute(secDomID, 'appEnabled'), 'description': 'Application Security', 'tagname': 'appEnabled'});
+
+      dataOut({'description': 'User Realm', 'tagname': 'userrealm', 'tagtype': '1'});
+      userRegistry = cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'userRegistries'))[0];
+      if userRegistry != '':
+        dataOut({'description': 'Standalone custom registry', 'tagname': 'customregistry', 'tagtype': '1'});
+        CusProp='';
+        for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(userRegistry, 'properties')):
+          dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+        if CusProp == "":
+          dataOut({'value': "No custom properties set."});
+        dataOut({'tagname': 'customregistry', 'tagtype': '2'});
+      dataOut({'tagname': 'userrealm', 'tagtype': '2'});
+
+      authMechanisms = cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'authMechanisms'))[0];
+      if authMechanisms != '':
+        trustAssociation = cybcon_was.showAttribute(authMechanisms, 'trustAssociation');
+
+        if trustAssociation != '':
+          dataOut({'description': 'Trust Association', 'tagname': 'trustAssociation', 'tagtype': '1'});
+          dataOut({'name': 'enabled', 'value': cybcon_was.showAttribute(trustAssociation, 'enabled'), 'description': 'Enable trust association', 'tagname': 'enabled'});
+          dataOut({'description': 'Interceptors', 'tagname': 'interceptors', 'tagtype': '1'});
+          intereptorID = '';
+          for interceptorID in cybcon_was.splitArray(cybcon_was.showAttribute(trustAssociation, 'interceptors')):
+            dataOut({'tagname': 'interceptor', 'tagtype': '1'});
+            dataOut({'name': 'interceptorClassName', 'value': cybcon_was.showAttribute(interceptorID, 'interceptorClassName'), 'description': 'Interceptor Class Name', 'tagname': 'interceptorClassName'});
+            dataOut({'name': 'trustProperties', 'description': 'Custom properties', 'tagname': 'trustProperties', 'tagtype': '1'});
+            CusProp='';
+            for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(interceptorID, 'trustProperties')):
+              dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+            if CusProp == "":
+              dataOut({'value': "No custom properties set."});
+            dataOut({'tagname': 'trustProperties', 'tagtype': '2'});
+            dataOut({'tagname': 'interceptor', 'tagtype': '2'});
+          dataOut({'tagname': 'interceptors', 'tagtype': '2'});
+          dataOut({'tagname': 'trustAssociation', 'tagtype': '2'});
+
+        dataOut({'description': 'Authentication Mechanism Attributes', 'tagname': 'authenticationmechanismattributes', 'tagtype': '1'});
+        dataOut({'name': 'timeout', 'value': cybcon_was.showAttribute(authMechanisms, 'timeout'), 'unit': 'minutes', 'description': 'LTPA timeout value for forwarded credentials between servers', 'tagname': 'timeout'});
+        dataOut({'name': 'useDomainQualifiedUserNames', 'value': cybcon_was.showAttribute(secDomID, 'useDomainQualifiedUserNames'), 'description': 'Use realm-qualified user names', 'tagname': 'useDomainQualifiedUserNames'});
+        dataOut({'tagname': 'authenticationmechanismattributes', 'tagtype': '2'});
+
+      dataOut({'description': 'Custom properties', 'tagname': 'customproperties', 'tagtype': '1'});
+      CusProp="";
+      for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'properties')):
+        dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+      if CusProp == "":
+        dataOut({'value': "No custom properties set."});
+      dataOut({'tagname': 'customproperties', 'tagtype': '2'});
+
+      dataOut({'tagname': 'securitydomain', 'tagtype': '2'});
+  except AttributeError:
+    dataOut({'description': "WARNING", 'value': "The Server not supports AdminTask.listSecurityDomains().", 'tagname': "WARNING"});
+    pass;
+
+  dataOut({'tagname': 'securitydomains', 'tagtype': '2'});
 
 #----------------------------------------------------------------------------
 # get_signerCertificates
@@ -2581,6 +2678,104 @@ def get_enterpriseApplicationSessionManagement(deplObjectID):
     
   dataOut({'tagname': 'sessionManagement', 'tagtype': '2'});
 
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapRolesToUsers
+#   description: output MapRolesToUsers information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapRolesToUsers(appName):
+  dataOut({'tagname': 'MapRolesToUsers', 'description': 'Security role to user/group mapping', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  MapRolesToUsers=cybcon_was.parse_adminAppView(appName, 'MapRolesToUsers', 'Role:');
+
+  # check if there are parsed information and output them
+  if MapRolesToUsers == '':
+    dataOut({'description': "INFO", 'value': "No MapRolesToUsers in application."});
+  else:
+    attributeArray=['Role', 'Everyone?', 'All authenticated?', 'Mapped users', 'Mapped groups', 'All authenticated in trusted realms?', 'Mapped users access ids', 'Mapped groups access ids'];
+    # Loop over MapRolesToUsers array
+    for Mapping in MapRolesToUsers:
+      dataOut({'tagname': 'maproletouser', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'maproletouser', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapRolesToUsers', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapResRefToEJB
+#   description: output MapResRefToEJB information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapResRefToEJB(appName):
+  dataOut({'tagname': 'MapResRefToEJB', 'description': 'Mapping resource references to resources', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  MapResRefToEJB=cybcon_was.parse_adminAppView(appName, 'MapResRefToEJB', 'Module:');
+
+  # check if there are parsed information and output them
+  if MapResRefToEJB == '':
+    dataOut({'description': "INFO", 'value': "No MapResRefToEJB in application."});
+  else:
+    attributeArray=['Module', 'Bean', 'URI', 'Resource Reference', 'Resource type', 'Target Resource JNDI Name', 'Login configuration name', 'Properties', 'Extended Data source properties'];
+    # Loop over array
+    for Mapping in MapResRefToEJB:
+      dataOut({'tagname': 'resourcereference', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'resourcereference', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapResRefToEJB', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapEJBRefToEJB
+#   description: output MapEJBRefToEJB information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapEJBRefToEJB(appName):
+  dataOut({'tagname': 'MapEJBRefToEJB', 'description': 'Mapping EJB references to enterprise beans', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  MapEJBRefToEJB=cybcon_was.parse_adminAppView(appName, 'MapEJBRefToEJB', 'Module:');
+
+  # check if there are parsed information and output them
+  if MapEJBRefToEJB == '':
+    dataOut({'description': "INFO", 'value': "No MapEJBRefToEJB in application."});
+  else:
+    attributeArray=['Module', 'Bean', 'URI', 'Resource Reference', 'Class', 'Target Resource JNDI Name'];
+    # Loop over array
+    for Mapping in MapEJBRefToEJB:
+      dataOut({'tagname': 'ejbreference', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'ejbreference', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapEJBRefToEJB', 'tagtype': '2'});
+
+
 #----------------------------------------------------------------------------
 # get_enterpriseApplicationJSPandJSFoptions
 #   description: output information about the applications JSF and JSP options
@@ -3056,6 +3251,9 @@ if CONFIG['general']['application'] == "true":
     if CONFIG['application']['binaries'] == "true": get_enterpriseApplicationBinaries(appName, deplObjectID);
     if CONFIG['application']['classLoader'] == "true": get_enterpriseApplicationClassloading(deplObjectID);
     if CONFIG['application']['requestDispatcher'] == "true": get_enterpriseApplicationRequestDispatcher(deplObjectID);
+    if CONFIG['application']['MapRolesToUsers'] == "true": get_enterpriseApplicationMapRolesToUsers(appName);
+    if CONFIG['application']['MapResRefToEJB'] == "true": get_enterpriseApplicationMapResRefToEJB(appName);
+    if CONFIG['application']['MapEJBRefToEJB'] == "true": get_enterpriseApplicationMapEJBRefToEJB(appName);
     if CONFIG['application']['sharedLibRef'] == "true": get_enterpriseApplicationLibraryReferences(deplObjectID);
     if CONFIG['application']['sessionManagement'] == "true": get_enterpriseApplicationSessionManagement(deplObjectID);
     if CONFIG['application']['jSPAndJSFoptions'] == "true": get_enterpriseApplicationJSPandJSFoptions(appName, deplObjectID);

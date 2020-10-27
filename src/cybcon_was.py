@@ -6,18 +6,40 @@
 # Date: 2009-06-30
 # (C) Copyright by Cybcon Industries 2009
 # Library can be downloaded at: http://www.cybcon-industries.de/
+#-------------------------------------------------------------------------------
+# COPYRIGHT AND LICENSE
+#
+# (C) Copyright 2009-2014, Cybcon Industries, Michael Oberdorf <cybcon@cybcon-industries.de>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 20 $
-#  $LastChangedDate: 2014-03-17 16:43:09 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 30 $
+#  $LastChangedDate: 2014-03-17 16:51:50 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 20 2014-03-17 15:43:09Z cybcon89 $
+#  $Id: cybcon_was.py 30 2014-03-17 15:51:50Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.021";                       # version of this library
+cybcon_was_lib_version="1.030";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -573,6 +595,65 @@ def get_applicationState(appName):
   if FLAG_true == "set" and FLAG_false == "unset": return "started";
   if FLAG_true == "unset" and FLAG_false == "unset": return "unmapped";
 
+#----------------------------------------------------------------------------
+# parse_adminAppView
+#   description: parse the output of AdminApp.view(appName, option) and
+#     return an array of disctionaries
+#   input:
+#     string (application name)
+#     string (option from AdminApp.options(application name)),
+#     string (startKey that identifies the start of the information part)
+#   output: -
+#   return: array of dictionaries | null
+#----------------------------------------------------------------------------
+def parse_adminAppView(appName, option, identifier):
+
+  # make option lower case
+  option=option.lower();
+
+  # define the master array that hold the information
+  AppInf=[];
+
+  # starting flag that inidicates the start if given identifier matches
+  startFlag='false';
+
+  # loop over all valid options for the application, if given option
+  # was found, proceed with detailed view
+  for validOption in AdminApp.options(appName).split(lineSeparator):
+    # check if the option is valid for application
+    if validOption.lower() == option:
+      # option found, start parsing option details
+      for line in AdminApp.view(appName, '-' + validOption).split(lineSeparator):
+        line = line.strip();
+        if line == '': continue;    # skip empty lines
+        if startFlag == 'false':
+          if line.find(identifier) != -1:
+            startFlag='true';                 # first entry found
+            AppInf.append({});                # initialize dictionary
+            AppInfIndex=len(AppInf) - 1;      # get index of array
+            att, val = line.split(":",1);     # split the line in attribute and value pair
+            att=att.strip();                  # remove leading and trailing whitespaces from attribute
+            val=val.strip();                  # remove leading and trailing whitespaces from value
+            AppInf[AppInfIndex][att]=val;     # save information in hashtable
+            continue;
+        else:
+          if line.find(identifier) != -1:
+            AppInf.append({});                # initialize next dictionary
+            AppInfIndex=len(AppInf) - 1;      # get index of array
+          att, val = line.split(":",1);       # split the line in attribute and value pair
+          att=att.strip();                    # remove leading and trailing whitespaces from attribute
+          val=val.strip();                    # remove leading and trailing whitespaces from value
+          AppInf[AppInfIndex][att]=val;       # save information in hashtable
+          continue;
+    else:
+      continue;
+
+  # check if there are parsed information
+  if len(AppInf) == 0:
+    return '';         # no information found - return NULL
+  else:
+    return AppInf;      # yes, we have information - return array of dictionaries
+
 
 #############################################################################
 # do things on the WebSphere
@@ -868,6 +949,7 @@ cybcon_was - Cybcon Industries simple python/jython WebSphere functions library
  S_objectScope = cybcon_was.get_ObjectScopeByID(objectID);
 
  D_MBean = cybcon_was.parse_mbean(mbean);
+ A_appInfo = cybcon_was.parse_adminAppView(appName, option, identifier);
 
  # functions to get informations about the WebSphere Infrastructure
  A_attributes = cybcon_was.get_AttributesFromObject(objectID);
@@ -981,6 +1063,32 @@ the attribute/value pieces and store that information in a flat hashtable (dicti
   mbean_dict = cybcon_was.parse_mbean(mbean);
   print mbean_dict['process'];
 
+=item B<cybcon_was.parse_adminAppView(appName, option, identifier)>
+
+The function parses the output of AdminApp.view(appName, option) to
+get the relevant information in a computer-processable way.
+The relevant input parameters are the "application name", the option
+(from AdminApp.options(application name)) and an identification string.
+The identification string is to identify the start of a new information block.
+
+Example:
+  If you are searching for MapRolesToUsers, every new entry will start with
+  the keyword 'Role:'
+    appName='my_enterprise_application';
+    option='MapRolesToUsers';
+    identifier='Role:';
+    MapRolesToUsers=cybcon_was.parse_adminAppView(appName, option, identifier);
+
+    the Array (MapRolesToUsers) looks like:
+      MapRolesToUsers[0]
+       {
+        'Role': 'adminRole',
+        'Everyone?': 'No',
+        'All authenticated?': 'No',
+        'Mapped users': '',
+        'Mapped groups': 'APP.ADMINS'
+       }
+
 =back
 
 =head2 functions to get informations about the WebSphere infrastructure
@@ -1023,7 +1131,7 @@ the function cybcon_was.splitArray(string) splits into:
 
 The functions returns an array of names of all nodes in the WebSphere cell.
 
-=item B<cybcon_was..get_nodeNameByServerID(serverID)>
+=item B<cybcon_was.get_nodeNameByServerID(serverID)>
 
 If you give that function a serverID, it tries to identify the node on which that server
 is configured.
