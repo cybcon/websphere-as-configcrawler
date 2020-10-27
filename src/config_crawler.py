@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 41 $
-#  $LastChangedDate: 2014-04-01 13:42:56 +0200 (Tue, 01 Apr 2014) $
+#  $Revision: 45 $
+#  $LastChangedDate: 2014-05-13 18:11:30 +0200 (Tue, 13 May 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 41 2014-04-01 11:42:56Z cybcon89 $
+#  $Id: config_crawler.py 45 2014-05-13 16:11:30Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.605";
+VERSION="0.610";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -119,7 +119,7 @@ def get_configuration(configfile):
   configAttributes['services'] = ['serviceProviders', 'policySets'];
   configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
   configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
-  configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions', 'MapRolesToUsers', 'MapResRefToEJB', 'MapEJBRefToEJB'];
+  configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions', 'MapRolesToUsers', 'MapRunAsRolesToUsers', 'MapResRefToEJB', 'MapEJBRefToEJB', 'MapJaspiProvider', 'MapModulesToServers', 'MetadataCompleteForModules', 'ModuleBuildID', 'CtxRootForWebMod', 'MapInitParamForServlet', 'MapWebModToVH'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
@@ -144,7 +144,7 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.031";
+  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.030";
 
 # give configuration object back
   return configHash;
@@ -568,7 +568,8 @@ def get_JMSProviderProperties(objectID):
         dataOut({'name': 'decimalEncoding', 'value': cybcon_was.showAttribute(MQQDest, 'decimalEncoding'), 'description': 'Decimal encoding', 'tagname': 'decimalEncoding'});
         dataOut({'name': 'floatingPointEncoding', 'value': cybcon_was.showAttribute(MQQDest, 'floatingPointEncoding'), 'description': 'Floating point encoding', 'tagname': 'floatingPointEncoding'});
         #dataOut({'name': 'useRFH2', 'value': cybcon_was.showAttribute(MQQDest, 'useRFH2'), 'description': 'Append RFH version 2 headers to messages sent to this destination', 'tagname': 'useRFH2'});
-        dataOut({'name': 'targetClient', 'value': cybcon_was.showAttribute(MQQDest, 'targetClient'), 'description': 'Message body (Target client)', 'tagname': 'targetClient'});
+        dataOut({'name': 'messageBody', 'value': cybcon_was.showAttribute(MQQDest, 'messageBody'), 'description': 'Message body', 'tagname': 'messageBody'});
+        dataOut({'name': 'targetClient', 'value': cybcon_was.showAttribute(MQQDest, 'targetClient'), 'description': 'Target client', 'tagname': 'targetClient'});
         dataOut({'name': 'replyToStyle', 'value': cybcon_was.showAttribute(MQQDest, 'replyToStyle'), 'description': 'Reply to style', 'tagname': 'replyToStyle'});
         dataOut({'name': 'sendAsync', 'value': cybcon_was.showAttribute(MQQDest, 'sendAsync'), 'description': 'Asynchronously send messages to the queue manager', 'tagname': 'sendAsync'});
         dataOut({'name': 'readAhead', 'value': cybcon_was.showAttribute(MQQDest, 'readAhead'), 'description': 'Read ahead, and cache, non-persistent messages for consumers', 'tagname': 'readAhead'});
@@ -2721,6 +2722,38 @@ def get_enterpriseApplicationMapRolesToUsers(appName):
   dataOut({'tagname': 'MapRolesToUsers', 'tagtype': '2'});
 
 #----------------------------------------------------------------------------
+# get_enterpriseApplicationMapRunAsRolesToUsers
+#   description: output MapRunAsRolesToUsers information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapRunAsRolesToUsers(appName):
+  dataOut({'tagname': 'MapRunAsRolesToUsers', 'description': 'User RunAs roles', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  MapRunAsRolesToUsers=cybcon_was.parse_adminAppView(appName, 'MapRunAsRolesToUsers', 'Role:');
+
+  # check if there are parsed information and output them
+  if MapRunAsRolesToUsers == '':
+    dataOut({'description': "INFO", 'value': "No MapRunAsRolesToUsers in application."});
+  else:
+    attributeArray=['Role', 'User name', 'Password'];
+    # Loop over MapRolesToUsers array
+    for Mapping in MapRunAsRolesToUsers:
+      dataOut({'tagname': 'MapRunAsRolesToUser', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'MapRunAsRolesToUser', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapRunAsRolesToUsers', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
 # get_enterpriseApplicationMapResRefToEJB
 #   description: output MapResRefToEJB information from application
 #   input: string applicationName
@@ -2751,6 +2784,231 @@ def get_enterpriseApplicationMapResRefToEJB(appName):
       dataOut({'tagname': 'resourcereference', 'tagtype': '2'});
 
   dataOut({'tagname': 'MapResRefToEJB', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapModulesToServers
+#   description: output MapModulesToServers information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapModulesToServers(appName):
+  dataOut({'tagname': 'MapModulesToServers', 'description': 'Manage Modules', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'MapModulesToServers', 'Module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No MapModulesToServers in application."});
+  else:
+    attributeArray=['Module', 'URI', 'Server'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'MapModulesToServer', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'MapModulesToServer', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapModulesToServers', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapJaspiProvider
+#   description: output MapJaspiProvider information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapJaspiProvider(appName):
+  dataOut({'tagname': 'MapJaspiProviders', 'description': 'JASPI provider', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'MapJaspiProvider', 'Module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No MapJaspiProvider in application."});
+  else:
+    attributeArray=['Module', 'URI', 'Use JASPI', 'JASPI provider name'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'MapJaspiProvider', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'MapJaspiProvider', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapJaspiProviders', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMetadataCompleteForModules
+#   description: output MetadataCompleteForModules information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMetadataCompleteForModules(appName):
+  dataOut({'tagname': 'MetadataCompleteForModules', 'description': 'Metadata for modules', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'MetadataCompleteForModules', 'Module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No MapJaspiProvider in application."});
+  else:
+    attributeArray=['Module', 'URI', 'metadata-complete attribute'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'MetadataCompleteForModule', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'MetadataCompleteForModule', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MetadataCompleteForModules', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationModuleBuildID
+#   description: output ModuleBuildID information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationModuleBuildID(appName):
+  dataOut({'tagname': 'ModuleBuildIDs', 'description': 'Display module build Ids', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'ModuleBuildID', 'Module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No ModuleBuildID in application."});
+  else:
+    attributeArray=['Module', 'URI', 'Build ID'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'ModuleBuildID', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'ModuleBuildID', 'tagtype': '2'});
+
+  dataOut({'tagname': 'ModuleBuildIDs', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationCtxRootForWebMod
+#   description: output CtxRootForWebMod information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationCtxRootForWebMod(appName):
+  dataOut({'tagname': 'CtxRootForWebMods', 'description': 'Context Root For Web Modules', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'CtxRootForWebMod', 'Web module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No CtxRootForWebMod in application."});
+  else:
+    attributeArray=['Web module', 'URI', 'Context Root'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'CtxRootForWebMod', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'CtxRootForWebMod', 'tagtype': '2'});
+
+  dataOut({'tagname': 'CtxRootForWebMods', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapInitParamForServlet
+#   description: output MapInitParamForServlet information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapInitParamForServlet(appName):
+  dataOut({'tagname': 'MapInitParamForServlets', 'description': 'Initialize parameters for servlets', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'MapInitParamForServlet', 'Web module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No MapInitParamForServlet in application."});
+  else:
+    attributeArray=['Web module', 'URI', 'Servlet', 'Name', 'Description', 'Value'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'MapInitParamForServlet', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'MapInitParamForServlet', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapInitParamForServlets', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationMapWebModToVH
+#   description: output MapWebModToVH information from application
+#   input: string applicationName
+#   output: information on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationMapWebModToVH(appName):
+  dataOut({'tagname': 'MapWebModToVHs', 'description': 'Virtual hosts', 'tagtype': '1'});
+
+  # array that hold the parsed information
+  parsedInformation=cybcon_was.parse_adminAppView(appName, 'MapWebModToVH', 'Web module:');
+
+  # check if there are parsed information and output them
+  if parsedInformation == '':
+    dataOut({'description': "INFO", 'value': "No MapWebModToVH in application."});
+  else:
+    attributeArray=['Web module', 'URI', 'Virtual host'];
+    # Loop over array
+    for Mapping in parsedInformation:
+      dataOut({'tagname': 'MapWebModToVH', 'tagtype': '1'});
+      for attribute in attributeArray:
+        if Mapping.has_key(attribute) == 1:
+          # generate tag name from attribute
+          atTag=attribute.replace('?', '');
+          atTag="".join(atTag.split());
+          atTag=atTag.lower();
+          dataOut({'name': atTag, 'value': Mapping[attribute], 'description': attribute, 'tagname': atTag});
+      dataOut({'tagname': 'MapWebModToVH', 'tagtype': '2'});
+
+  dataOut({'tagname': 'MapWebModToVHs', 'tagtype': '2'});
+
 
 #----------------------------------------------------------------------------
 # get_enterpriseApplicationMapEJBRefToEJB
@@ -3255,6 +3513,8 @@ if CONFIG['general']['application'] == "true":
     appID = AdminConfig.getid('/Deployment:' + appName + '/');
     deplObjectID = cybcon_was.showAttribute(appID, 'deployedObject');
     dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname", 'tagtype': "1"});
+    # Detail Properties
+    dataOut({'description': 'Detail Properties', 'tagname': 'DetailProperties', 'tagtype': '1'});
     if CONFIG['application']['targetMapping'] == "true" or CONFIG['application']['runState'] == "true":
       get_enterpriseApplicationTargetAndState(appName, CONFIG['application']['targetMapping'], CONFIG['application']['runState']);
     if CONFIG['application']['startupBehavior'] == "true": get_enterpriseApplicationStartupBehavior(deplObjectID);
@@ -3262,11 +3522,29 @@ if CONFIG['general']['application'] == "true":
     if CONFIG['application']['classLoader'] == "true": get_enterpriseApplicationClassloading(deplObjectID);
     if CONFIG['application']['requestDispatcher'] == "true": get_enterpriseApplicationRequestDispatcher(deplObjectID);
     if CONFIG['application']['MapRolesToUsers'] == "true": get_enterpriseApplicationMapRolesToUsers(appName);
+    if CONFIG['application']['MapJaspiProvider'] == "true": get_enterpriseApplicationMapJaspiProvider(appName);
+    if CONFIG['application']['MapRunAsRolesToUsers'] == "true": get_enterpriseApplicationMapRunAsRolesToUsers(appName);
+    dataOut({'tagname': 'DetailProperties', 'tagtype': '2'});
+    # References
+    dataOut({'description': 'References', 'tagname': 'References', 'tagtype': '1'});
     if CONFIG['application']['MapResRefToEJB'] == "true": get_enterpriseApplicationMapResRefToEJB(appName);
     if CONFIG['application']['MapEJBRefToEJB'] == "true": get_enterpriseApplicationMapEJBRefToEJB(appName);
     if CONFIG['application']['sharedLibRef'] == "true": get_enterpriseApplicationLibraryReferences(deplObjectID);
+    dataOut({'tagname': 'References', 'tagtype': '2'});
+    # Modules
+    dataOut({'description': 'Modules', 'tagname': 'Modules', 'tagtype': '1'});
+    if CONFIG['application']['MapModulesToServers'] == "true": get_enterpriseApplicationMapModulesToServers(appName);
+    if CONFIG['application']['MetadataCompleteForModules'] == "true": get_enterpriseApplicationMetadataCompleteForModules(appName);
+    if CONFIG['application']['ModuleBuildID'] == "true": get_enterpriseApplicationModuleBuildID(appName);
+    dataOut({'tagname': 'Modules', 'tagtype': '2'});
+    # Web Module Properties
+    dataOut({'description': 'Web Module Properties', 'tagname': 'WebModuleProperties', 'tagtype': '1'});
     if CONFIG['application']['sessionManagement'] == "true": get_enterpriseApplicationSessionManagement(deplObjectID);
+    if CONFIG['application']['CtxRootForWebMod'] == "true": get_enterpriseApplicationCtxRootForWebMod(appName);
+    if CONFIG['application']['MapInitParamForServlet'] == "true": get_enterpriseApplicationMapInitParamForServlet(appName);
     if CONFIG['application']['jSPAndJSFoptions'] == "true": get_enterpriseApplicationJSPandJSFoptions(appName, deplObjectID);
+    if CONFIG['application']['MapWebModToVH'] == "true": get_enterpriseApplicationMapWebModToVH(appName);
+    dataOut({'tagname': 'WebModuleProperties', 'tagtype': '2'});
     dataOut({'tagname': "appname", 'tagtype': "2"});
   dataOut({'tagname': "enterpriseapplications", 'tagtype': "2"});
   dataOut({'tagname': "applications", 'tagtype': "2"});
