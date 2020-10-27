@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 32 $
-#  $LastChangedDate: 2014-03-18 10:32:22 +0100 (Tue, 18 Mar 2014) $
+#  $Revision: 36 $
+#  $LastChangedDate: 2014-03-18 13:36:31 +0100 (Tue, 18 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 32 2014-03-18 09:32:22Z cybcon89 $
+#  $Id: config_crawler.py 36 2014-03-18 12:36:31Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.601";
+VERSION="0.603";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -1134,7 +1134,9 @@ def get_securityDomain():
       dataOut({'name': 'appEnabled', 'value': cybcon_was.showAttribute(secDomID, 'appEnabled'), 'description': 'Application Security', 'tagname': 'appEnabled'});
 
       dataOut({'description': 'User Realm', 'tagname': 'userrealm', 'tagtype': '1'});
-      userRegistry = cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'userRegistries'))[0];
+      userRegistryArray = cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'userRegistries'));
+      userRegistry='';
+      if len(userRegistryArray) > 0: userRegistry=userRegistryArray[0];
       if userRegistry != '':
         dataOut({'description': 'Standalone custom registry', 'tagname': 'customregistry', 'tagtype': '1'});
         CusProp='';
@@ -1145,7 +1147,9 @@ def get_securityDomain():
         dataOut({'tagname': 'customregistry', 'tagtype': '2'});
       dataOut({'tagname': 'userrealm', 'tagtype': '2'});
 
-      authMechanisms = cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'authMechanisms'))[0];
+      authMechanismsArray=cybcon_was.splitArray(cybcon_was.showAttribute(secDomID, 'authMechanisms'));
+      authMechanisms='';
+      if len(authMechanismsArray) > 0: authMechanisms = authMechanismsArray[0];
       if authMechanisms != '':
         trustAssociation = cybcon_was.showAttribute(authMechanisms, 'trustAssociation');
 
