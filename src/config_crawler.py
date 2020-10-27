@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 22 $
-#  $LastChangedDate: 2014-03-17 16:43:41 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 24 $
+#  $LastChangedDate: 2014-03-17 16:44:21 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 22 2014-03-17 15:43:41Z cybcon89 $
+#  $Id: config_crawler.py 24 2014-03-17 15:44:21Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.578";
+VERSION="0.579";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -123,7 +123,7 @@ def get_configuration(configfile):
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
   configAttributes['appserver'] = ['ApplicationServerProperties', 'JVM_properties', 'EndPointPorts', 'DCSTransports', 'MSGListenerPorts', 'JMS_provider', 'HAManagerService', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'Logging'];
-  configAttributes['webserver'] = ['WebServerProperties', 'EndPointPorts', 'Logging', 'Plugin_properties', 'RemoteWebServerMgmnt'];
+  configAttributes['webserver'] = ['WebServerProperties', 'EndPointPorts', 'Logging', 'Plugin_properties', 'RemoteWebServerMgmnt', 'Websphere_variables'];
   configAttributes['cybcon_was'] = [ 'libPath', 'minVersion' ];
 # default value
   configDefaultValue="false";
@@ -1038,7 +1038,7 @@ def get_securityProperties(cellName):
       myTempKeyHash = {};
       myTempKeyHash['scope'] = certScope.replace("scopeName:", "").strip();
       myTempKeyHash['keystores'] = [];
-      for keyStoreID in AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator):
+      for keyStoreID in AdminTask.listKeyStores('[-scopeName "' + myTempKeyHash['scope'] + '"]').split(lineSeparator):
         if keyStoreID != "" and cybcon_was.find_valueInArray(keyStoreID, myOverallKeyStores) != 'true':
           myOverallKeyStores.append(keyStoreID);
           myTempKeyHash['keystores'].append(keyStoreID);
@@ -1062,14 +1062,17 @@ def get_securityProperties(cellName):
         dataOut({'name': "useForAcceleration", 'value': cybcon_was.showAttribute(keyStoreID, 'useForAcceleration'), 'description': "Enable cryptographic operations on hardware device", 'tagname': "useForAcceleration"});
 
         # get the signer certificates from keystore
-        get_signerCertificates(myKeyStoreHash);
+        get_signerCertificates(keyStoreName, myKeyStoreHash, certAttributeList);
 
         # get the personal certificates from keystore
-        get_personalCertificates(myKeyStoreHash);
+        get_personalCertificates(keyStoreName, myKeyStoreHash, certAttributeList);
 
         dataOut({'tagname': "keystore", 'tagtype': "2"});
   except AttributeError:
     dataOut({'description': "WARNING", 'value': "The Server not supports AdminTask.listKeyStores().", 'tagname': "WARNING"});
+    pass;
+  except:
+    dataOut({'description': "ERROR", 'value': "Exception raised while executing AdminTask.listKeyStores().", 'tagname': "ERROR"});
     pass;
 
   dataOut({'tagname': "keystoresandcerts", 'tagtype': "2"});
@@ -1090,15 +1093,16 @@ def get_securityProperties(cellName):
 #----------------------------------------------------------------------------
 # get_signerCertificates
 #   description: output the signer certificates from a given keystore
-#   input: dictionary KeyStore
+#   input: string keyStoreName, dictionary KeyStore, array certAttributeList
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
-def get_signerCertificates(myKeyStoreHash):
+def get_signerCertificates(keyStoreName, myKeyStoreHash, certAttributeList):
+
   dataOut({'description': "Signer certificates", 'tagname': "signercertificates", 'tagtype': "1"});
   # skip errors while reading keystore (e.g. keystore file not exist)
   try:
-    signerCertificates = AdminTask.listSignerCertificates(['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
+    signerCertificates = AdminTask.listSignerCertificates(['-keyStoreScope "' + myKeyStoreHash['scope'] + '" -keyStoreName "' + keyStoreName + '"']);
     for signerCert in signerCertificates.split(lineSeparator):
       if signerCert != "":
         signerCert = signerCert.replace("[[", "").replace("] ]", "");
@@ -1139,15 +1143,15 @@ def get_signerCertificates(myKeyStoreHash):
 #----------------------------------------------------------------------------
 # get_personalCertificates
 #   description: output the personal certificates from a given keystore
-#   input: dictionary KeyStore
+#   input: string keyStoreName, dictionary KeyStore, array certAttributeList
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
-def get_personalCertificates(myKeyStoreHash):
+def get_personalCertificates(keyStoreName, myKeyStoreHash, certAttributeList):
   dataOut({'description': "Personal certificates", 'tagname': "personalcertificates", 'tagtype': "1"});
   # skip errors while reading keystore (e.g. keystore file not exist)
   try:
-    personalCertificates = AdminTask.listPersonalCertificates(['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]);
+    personalCertificates = AdminTask.listPersonalCertificates(['-keyStoreScope "' + myKeyStoreHash['scope'] + '" -keyStoreName "' + keyStoreName + '"']);
     for personalCert in personalCertificates.split(lineSeparator):
       if personalCert != "":
         personalCert = personalCert.replace("[[", "").replace("] ]", "");
