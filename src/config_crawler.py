@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 45 $
-#  $LastChangedDate: 2014-05-13 18:11:30 +0200 (Tue, 13 May 2014) $
+#  $Revision: 47 $
+#  $LastChangedDate: 2014-07-18 08:15:53 +0200 (Fri, 18 Jul 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 45 2014-05-13 16:11:30Z cybcon89 $
+#  $Id: config_crawler.py 47 2014-07-18 06:15:53Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.610";
+VERSION="0.611";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -1717,6 +1717,19 @@ def get_appServerProperties(serverID, serverName):
     if CusProp == "":
       dataOut({'value': "No custom properties set."});
   dataOut({'tagname': "customproperties", 'tagtype': "2"});
+  dataOut({'description': "Custom Services", 'tagname': "customservices", 'tagtype': "1"});
+  CusServID="";
+  for CusServID in cybcon_was.splitArray(cybcon_was.showAttribute(serverID, 'customServices')):
+    dataOut({'tagname': "customservice", 'tagtype': "1"});
+    dataOut({'name': 'enable', 'value': cybcon_was.showAttribute(CusServID, 'enable'), 'description': 'Enable service at server startup', 'tagname': 'enable'});
+    dataOut({'name': 'classname', 'value': cybcon_was.showAttribute(CusServID, 'classname'), 'description': 'Classname', 'tagname': 'classname'});
+    dataOut({'name': 'displayName', 'value': cybcon_was.showAttribute(CusServID, 'displayName'), 'description': 'Display Name', 'tagname': 'displayName'});
+    dataOut({'name': 'classpath', 'value': cybcon_was.showAttribute(CusServID, 'classpath'), 'description': 'Classpath', 'tagname': 'classpath'});
+    dataOut({'tagname': "customservice", 'tagtype': "2"});
+  if CusServID == "":
+    dataOut({'value': "No custom service defined."});
+
+  dataOut({'tagname': "customservices", 'tagtype': "2"});
   dataOut({'tagname': "administration", 'tagtype': "2"});
   dataOut({'tagname': "serverinfrastructure", 'tagtype': "2"});
 
