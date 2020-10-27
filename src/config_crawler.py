@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 62 $
-#  $LastChangedDate: 2016-04-26 18:59:44 +0200 (Tue, 26 Apr 2016) $
+#  $Revision: 64 $
+#  $LastChangedDate: 2016-05-17 21:51:52 +0200 (Tue, 17 May 2016) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 62 2016-04-26 16:59:44Z cybcon89 $
+#  $Id: config_crawler.py 64 2016-05-17 19:51:52Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.643";
+VERSION="0.644";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -100,8 +100,8 @@ def get_configuration(configfile):
 #   all other lines are attribute/value pairs
 #   split at equal char, and set value to lower case
     attribute, value = line.split("=",1);
-    value_original = value;
-    value = value.lower();
+    if section != 'cybcon_was' and attribute != 'libPath':
+      value = value.lower();
 #   if we are in a section, and an attribute is set append attribute/value pair to section
     if section != "" and attribute != "":
       configHash[section][attribute] = value;
@@ -145,7 +145,6 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  else: configHash['cybcon_was']['libPath'] = value_original;
   if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.032";
 
 # give configuration object back
