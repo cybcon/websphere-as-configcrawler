@@ -19,9 +19,7 @@ Output can be set to XML (for easy computer based postprocessing) or as simple T
 
 2. Modify `crawler.conf` for your needs
 
-3. execute crawler
-   usage:
-     `./wsadmin.sh -lang jython -f /path/to/config_crawler.py /path/to/crawler.conf`
+3. execute crawler<br>usage:<br/>`./wsadmin.sh -lang jython -f /path/to/config_crawler.py /path/to/crawler.conf`
 
 # Project Samples
 
