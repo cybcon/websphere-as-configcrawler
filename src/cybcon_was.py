@@ -8,17 +8,17 @@
 # Library can be downloaded at: http://www.cybcon-industries.de/
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 4 $
-#  $LastChangedDate: 2014-03-17 16:29:32 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 10 $
+#  $LastChangedDate: 2014-03-17 16:35:30 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 4 2014-03-17 15:29:32Z cybcon89 $
+#  $Id: cybcon_was.py 10 2014-03-17 15:35:30Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.003";                       # version of this library
+cybcon_was_lib_version="1.010";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -198,6 +198,27 @@ def get_ObjectTypeByID(objectID):
   
   # give objectType back
   return objectType;
+
+#----------------------------------------------------------------------------
+# get_ObjectScopeByID
+#   description: try to identify the object scope from the given object ID
+#   input: objectID
+#   return: objectScope ("Server" | "ServerCluster" | "Node" | "Cell")
+#----------------------------------------------------------------------------
+def get_ObjectScopeByID(objectID):
+  # check if the objectID is given to function, return nothing if it is not
+  if objectID == "": return "";
+
+  # cut the objectID string to it's components
+  # cut the string at the first '|' - take the left side of the string
+  objectScope = objectID.split("|")[0];
+  # cut the string at the first '(' - take the right side of the string
+  objectScope = objectScope.split("(")[-1];
+  # check for the scope and give scope back
+  if objectScope.find("/clusters/") != -1: return "ServerCluster";
+  if objectScope.find("/servers/") != -1: return "Server";
+  if objectScope.find("/nodes/") != -1: return "Node";
+  return "Cell";
 
 #----------------------------------------------------------------------------
 # parse_mbean
@@ -826,6 +847,7 @@ cybcon_was - Cybcon Industries simple python/jython WebSphere functions library
  # functions for text processing
  S_RC = cybcon_was.find_valueInArray(value, array);
  S_objectType = cybcon_was.get_ObjectTypeByID(objectID);
+ S_objectScope = cybcon_was.get_ObjectScopeByID(objectID);
  D_MBean = cybcon_was.parse_mbean(mbean);
 
  # functions to get informations about the WebSphere Infrastructure
@@ -915,6 +937,19 @@ string the object type.
 That object type can be used in the "AdminConfig.getid()" function to identify other objects.
 example: AdminConfig.getid('/' + objectType + ':' + objectName + '/');
 
+=item B<cybcon_was.get_ObjectScopeByID(objectID)>
+
+If you give the function a wsadmin objectID (from AdminConfig), it tries to identify the objects scope
+by parsing the ObjectID string.
+You can use that to check if you are on the right scope.
+The function returns following values:
+  "ServerCluster"
+  "Server"
+  "Node"
+  "Cell"
+example:
+  objectScope = cybcon_was.get_ObjectScopeByID(serverID)
+  print objectScope will output "Server"
 
 =item B<cybcon_was.parse_mbean(mbean)>
 

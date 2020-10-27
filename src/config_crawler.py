@@ -29,10 +29,10 @@
 # IN THE SOFTWARE.
 ################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 8 $
-#  $LastChangedDate: 2014-03-17 16:34:59 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 10 $
+#  $LastChangedDate: 2014-03-17 16:35:30 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 8 2014-03-17 15:34:59Z cybcon89 $
+#  $Id: config_crawler.py 10 2014-03-17 15:35:30Z cybcon89 $
 #---------------------------------------------------------------------
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.540";
+VERSION="0.550";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -144,7 +144,7 @@ def get_configuration(configfile):
 
   # set defaults for cybcon_was library
   if configHash['cybcon_was']['libPath'] == "false": configHash['cybcon_was']['libPath'] = "./";
-  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "0.8";
+  if configHash['cybcon_was']['minVersion'] == "false": configHash['cybcon_was']['minVersion'] = "1.003";
 
 # give configuration object back
   return configHash;
@@ -361,11 +361,121 @@ def get_CoreGroupProperties(cellID):
 #----------------------------------------------------------------------------
 def get_JMSProviderProperties(objectID):
   dataOut({'description': "JMS Providers", 'tagname': "jmsproviders", 'tagtype': "1"});
-  dataOut({'description': "WebSphere MQ", 'tagname': "webspheremq", 'tagtype': "1"});
-
   # get name and objectType of the objectID
   objectName = cybcon_was.showAttribute(objectID, 'name');
   objectType = cybcon_was.get_ObjectTypeByID(objectID);
+
+  #-----------------------
+  # Default messaging provider
+  dataOut({'description': "Default messaging provider", 'tagname': "defaultmessaging", 'tagtype': "1"});
+  #JMSProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/JMSProvider:WebSphere JMS Provider/');
+  JMSProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/J2CResourceAdapter:SIB JMS Resource Adapter/');
+  if JMSProviderID != "":
+    dataOut({'description': "Queue connection factories", 'tagname': "queueconnectionfactories", 'tagtype': "1"});
+    for QCF in AdminConfig.list('J2CConnectionFactory', JMSProviderID).split(lineSeparator):
+      if QCF != "":
+        conDefID = cybcon_was.showAttribute(QCF, 'connectionDefinition');
+        if conDefID != "":
+          if cybcon_was.showAttribute(conDefID, 'connectionInterface') != "javax.jms.QueueConnection": continue;
+        else: continue;
+        dataOut({'tagname': "queueconnectionfactory", 'tagtype': "1"});
+        dataOut({'name': "name", 'value': cybcon_was.showAttribute(QCF, 'name'), 'description': "Name", 'tagname': "name"});
+        dataOut({'name': "jndiName", 'value': cybcon_was.showAttribute(QCF, 'jndiName'), 'description': "JNDI name", 'tagname': "jndiname"});
+        conDefID = cybcon_was.showAttribute(QCF, 'connectionDefinition');
+        # parse connection definitions config properties
+        conDefProp = {};
+        for conDefPropID in cybcon_was.splitArray(cybcon_was.showAttribute(conDefID, 'configProperties')):
+          if conDefPropID != "":
+            propName=cybcon_was.showAttribute(conDefPropID, 'name');
+            propValue=cybcon_was.showAttribute(conDefPropID, 'value');
+            # propDesc=cybcon_was.showAttribute(conDefPropID, 'description');
+            # propType=cybcon_was.showAttribute(conDefPropID, 'type');
+            conDefProp[propName] = propValue;
+        if conDefProp.has_key('BusName') == 0: conDefProp['BusName'] = "";
+        dataOut({'name': "value", 'value': conDefProp['BusName'], 'description': "Bus name", 'tagname': "busname"});
+        if conDefProp.has_key('Target') == 0: conDefProp['Target'] = "";
+        dataOut({'name': "value", 'value': conDefProp['Target'], 'description': "Target", 'tagname': "target"});
+        if conDefProp.has_key('TargetType') == 0: conDefProp['TargetType'] = "";
+        dataOut({'name': "value", 'value': conDefProp['TargetType'], 'description': "Target type", 'tagname': "TargetType"});
+        if conDefProp.has_key('TargetSignificance') == 0: conDefProp['TargetSignificance'] = "";
+        dataOut({'name': "value", 'value': conDefProp['TargetSignificance'], 'description': "Target significance", 'tagname': "TargetSignificance"});
+        if conDefProp.has_key('TargetTransportChain') == 0: conDefProp['TargetTransportChain'] = "";
+        dataOut({'name': "value", 'value': conDefProp['TargetTransportChain'], 'description': "Target inbound transport chain", 'tagname': "TargetTransportChain"});
+        if conDefProp.has_key('ProviderEndpoints') == 0: conDefProp['ProviderEndpoints'] = "";
+        dataOut({'name': "value", 'value': conDefProp['ProviderEndpoints'], 'description': "Provider endpoints", 'tagname': "ProviderEndpoints"});
+        if conDefProp.has_key('ConnectionProximity') == 0: conDefProp['ConnectionProximity'] = "";
+        dataOut({'name': "value", 'value': conDefProp['ConnectionProximity'], 'description': "Connection proximity", 'tagname': "ConnectionProximity"});
+        if conDefProp.has_key('NonPersistentMapping') == 0: conDefProp['NonPersistentMapping'] = "";
+        dataOut({'name': "value", 'value': conDefProp['NonPersistentMapping'], 'description': "Nonpersistent message reliability", 'tagname': "NonPersistentMapping"});
+        if conDefProp.has_key('PersistentMapping') == 0: conDefProp['PersistentMapping'] = "";
+        dataOut({'name': "value", 'value': conDefProp['PersistentMapping'], 'description': "Persistent message reliability", 'tagname': "PersistentMapping"});
+        if conDefProp.has_key('ReadAhead') == 0: conDefProp['ReadAhead'] = "";
+        dataOut({'name': "value", 'value': conDefProp['ReadAhead'], 'description': "Read ahead", 'tagname': "ReadAhead"});
+        if conDefProp.has_key('TemporaryQueueNamePrefix') == 0: conDefProp['TemporaryQueueNamePrefix'] = "";
+        dataOut({'name': "value", 'value': conDefProp['TemporaryQueueNamePrefix'], 'description': "Temporary queue name prefix", 'tagname': "TemporaryQueueNamePrefix"});
+        dataOut({'name': "authDataAlias", 'value': cybcon_was.showAttribute(QCF, 'authDataAlias'), 'description': "Component-managed authentication alias", 'tagname': "authDataAlias"});
+        dataOut({'name': "logMissingTransactionContext", 'value': cybcon_was.showAttribute(QCF, 'logMissingTransactionContext'), 'description': "Log missing transaction contexts", 'tagname': "logMissingTransactionContext"});
+        dataOut({'name': "manageCachedHandles", 'value': cybcon_was.showAttribute(QCF, 'manageCachedHandles'), 'description': "Manage cached handles", 'tagname': "manageCachedHandles"});
+        if conDefProp.has_key('ShareDataSourceWithCMP') == 0: conDefProp['ShareDataSourceWithCMP'] = "";
+        dataOut({'name': "value", 'value': conDefProp['ShareDataSourceWithCMP'], 'description': "Share data source with CMP", 'tagname': "ShareDataSourceWithCMP"});
+        dataOut({'name': "xaRecoveryAuthAlias", 'value': cybcon_was.showAttribute(QCF, 'xaRecoveryAuthAlias'), 'description': "XA recovery authentication alias", 'tagname': "xaRecoveryAuthAlias"});
+
+        dataOut({'description': "Connection pool properties", 'tagname': "connectionpool", 'tagtype': "1"});
+        QCF_CPID = cybcon_was.showAttribute(QCF, 'connectionPool');
+        if QCF_CPID != "":
+          dataOut({'name': "connectionTimeout", 'value': cybcon_was.showAttribute(QCF_CPID, 'connectionTimeout'), 'unit': "seconds", 'description': "Connection timeout", 'tagname': "connectiontimeout"});
+          dataOut({'name': "maxConnections", 'value': cybcon_was.showAttribute(QCF_CPID, 'maxConnections'), 'unit': "connections", 'description': "Maximum connections", 'tagname': "maxconnections"});
+          dataOut({'name': "minConnections", 'value': cybcon_was.showAttribute(QCF_CPID, 'minConnections'), 'unit': "connections", 'description': "Minimum connections", 'tagname': "minconnections"});
+          dataOut({'name': "reapTime", 'value': cybcon_was.showAttribute(QCF_CPID, 'reapTime'), 'unit': "seconds", 'description': "Reap time", 'tagname': "reaptime"});
+          dataOut({'name': "unusedTimeout", 'value': cybcon_was.showAttribute(QCF_CPID, 'unusedTimeout'), 'unit': "seconds", 'description': "Unused timeout", 'tagname': "unusedtimeout"});
+          dataOut({'name': "agedTimeout", 'value': cybcon_was.showAttribute(QCF_CPID, 'agedTimeout'), 'unit': "seconds", 'description': "Aged timeout", 'tagname': "agedtimeout"});
+          dataOut({'name': "purgePolicy", 'value': cybcon_was.showAttribute(QCF_CPID, 'purgePolicy'), 'description': "Purge policy", 'tagname': "purgepolicy"});
+        else:
+          dataOut({'description': "WARNING", 'value': "No connection pool configuration object found - skip connection pool properties!"});
+        dataOut({'tagname': "connectionpool", 'tagtype': "2"});
+        dataOut({'tagname': "queueconnectionfactory", 'tagtype': "2"});
+      else:
+        dataOut({'value': "No queue connection factory defined on this scope."});
+    dataOut({'tagname': "queueconnectionfactories", 'tagtype': "2"});
+
+    dataOut({'description': "Queues", 'tagname': "queues", 'tagtype': "1"});
+    for queue in AdminConfig.list('J2CAdminObject', JMSProviderID).split(lineSeparator):
+      if queue != "":
+        dataOut({'tagname': "j2cadminobject", 'tagtype': "1"});
+        dataOut({'name': "name", 'value': cybcon_was.showAttribute(queue, 'name'), 'description': "Name", 'tagname': "name"});
+        dataOut({'name': "jndiName", 'value': cybcon_was.showAttribute(queue, 'jndiName'), 'description': "JNDI name", 'tagname': "jndiname"});
+        dataOut({'name': "description", 'value': cybcon_was.showAttribute(queue, 'description'), 'description': "description", 'tagname': "description"});
+        # parse queue properties
+        queueProp = {};
+        for propID in cybcon_was.splitArray(cybcon_was.showAttribute(queue, 'properties')):
+          if propID != "":
+            propName=cybcon_was.showAttribute(propID, 'name');
+            propValue=cybcon_was.showAttribute(propID, 'value');
+            # propReq=cybcon_was.showAttribute(conDefPropID, 'required');
+            # propType=cybcon_was.showAttribute(conDefPropID, 'type');
+            queueProp[propName] = propValue;
+        if queueProp.has_key('BusName') == 0: queueProp['BusName'] = "";
+        dataOut({'name': "value", 'value': queueProp['BusName'], 'description': "Bus name", 'tagname': "busname"});
+        if queueProp.has_key('QueueName') == 0: queueProp['QueueName'] = "";
+        dataOut({'name': "value", 'value': queueProp['QueueName'], 'description': "Queue name", 'tagname': "QueueName"});
+        if queueProp.has_key('DeliveryMode') == 0: queueProp['DeliveryMode'] = "";
+        dataOut({'name': "value", 'value': queueProp['DeliveryMode'], 'description': "Delivery mode", 'tagname': "DeliveryMode"});
+        if queueProp.has_key('TimeToLive') == 0: queueProp['TimeToLive'] = "";
+        dataOut({'name': "value", 'value': queueProp['TimeToLive'], 'description': "Time to live", 'unit': "milliseconds", 'tagname': "TimeToLive"});
+        if queueProp.has_key('Priority') == 0: queueProp['Priority'] = "";
+        dataOut({'name': "value", 'value': queueProp['Priority'], 'description': "Priority", 'tagname': "Priority"});
+        if queueProp.has_key('ReadAhead') == 0: queueProp['ReadAhead'] = "";
+        dataOut({'name': "value", 'value': queueProp['ReadAhead'], 'description': "Read ahead", 'tagname': "ReadAhead"});
+        dataOut({'tagname': "j2cadminobject", 'tagtype': "2"});
+      else:
+        dataOut({'value': "No queues defined on this scope."});
+    dataOut({'tagname': "queues", 'tagtype': "2"});
+
+  dataOut({'tagname': "defaultmessaging", 'tagtype': "2"});
+
+  #-----------------------
+  # WebSphere MQ messaging provider
+  dataOut({'description': "WebSphere MQ", 'tagname': "webspheremq", 'tagtype': "1"});
   JMSProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/JMSProvider:WebSphere MQ JMS Provider/');
   if JMSProviderID != "":
     dataOut({'description': "WebSphere MQ queue connection factories", 'tagname': "mqqueueconnectionfactories", 'tagtype': "1"});
@@ -847,12 +957,40 @@ def get_securityProperties(cellName):
   dataOut({'description': "Key stores and certificates", 'tagname': "keystoresandcerts", 'tagtype': "1"});
   # define possible certificate attributes to scan for and their description
   certAttributeList=['alias', 'version', 'size', 'serialNumber', 'issuedTo', 'issuedBy', 'fingerPrint', 'signatureAlgorithm', 'validity' ];
+
   try:
-    for keyStoreID in AdminTask.listKeyStores().split(lineSeparator):
-      if keyStoreID != "":
+    # check if server supports AdminTask.listKeyStores()
+    dummy = AdminTask.listKeyStores();
+    del dummy;
+    # check for all available KeyStores on cell scope
+    myScopedKeyStores = [];
+    myTempKeyHash = {};
+    myTempKeyHash['scope'] = '(cell):' + cellName;
+    myOverallKeyStores = AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator);
+    myTempKeyHash['keystores'] = AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator);
+    if len(myTempKeyHash['keystores']) >= 1: myScopedKeyStores.append(myTempKeyHash);
+
+    # check for all available KeyStores on node scope
+    for NN in cybcon_was.get_nodeNames():
+      myTempKeyHash = {};
+      myTempKeyHash['scope'] = '(cell):' + cellName + ':(node):' + NN;
+      myTempKeyHash['keystores'] = [];
+      for keyStoreID in AdminTask.listKeyStores('[-scopeName ' + myTempKeyHash['scope'] + ']').split(lineSeparator):
+        if keyStoreID != "" and cybcon_was.find_valueInArray(keyStoreID, myOverallKeyStores) != 'true':
+          myOverallKeyStores.append(keyStoreID);
+          myTempKeyHash['keystores'].append(keyStoreID);
+      if len(myTempKeyHash['keystores']) >= 1: myScopedKeyStores.append(myTempKeyHash);
+
+    # housekeeping
+    del myOverallKeyStores;
+    del myTempKeyHash;
+
+    for myKeyStoreHash in myScopedKeyStores:
+      for keyStoreID in myKeyStoreHash['keystores']:
         dataOut({'tagname': "keystore", 'tagtype': "1"});
         keyStoreName = cybcon_was.showAttribute(keyStoreID, 'name');
         dataOut({'name': "name", 'value': keyStoreName, 'description': "Name", 'tagname': "name"});
+        dataOut({'name': "scopeName", 'value': myKeyStoreHash['scope'], 'description': "scopeName", 'tagname': "scopeName"});
         dataOut({'name': "location", 'value': cybcon_was.showAttribute(keyStoreID, 'location'), 'description': "Path", 'tagname': "location"});
         dataOut({'name': "password", 'value': cybcon_was.showAttribute(keyStoreID, 'password'), 'description': "Password", 'tagname': "password"});
         dataOut({'name': "type", 'value': cybcon_was.showAttribute(keyStoreID, 'type'), 'description': "Type", 'tagname': "type"});
@@ -861,7 +999,7 @@ def get_securityProperties(cellName):
         dataOut({'name': "useForAcceleration", 'value': cybcon_was.showAttribute(keyStoreID, 'useForAcceleration'), 'description': "Enable cryptographic operations on hardware device", 'tagname': "useForAcceleration"});
 
         dataOut({'description': "Signer certificates", 'tagname': "signercertificates", 'tagtype': "1"});
-        for signerCert in AdminTask.listSignerCertificates (['-keyStoreName ' + keyStoreName ]).split(lineSeparator):
+        for signerCert in AdminTask.listSignerCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]).split(lineSeparator):
           if signerCert != "":
             signerCert = signerCert.replace("[[", "").replace("] ]", "");
             # generate empty certificate dictionary
@@ -896,7 +1034,7 @@ def get_securityProperties(cellName):
         dataOut({'tagname': "signercertificates", 'tagtype': "2"});
 
         dataOut({'description': "Personal certificates", 'tagname': "personalcertificates", 'tagtype': "1"});
-        for personalCert in AdminTask.listPersonalCertificates (['-keyStoreName ' + keyStoreName ]).split(lineSeparator):
+        for personalCert in AdminTask.listPersonalCertificates (['-keyStoreScope ' + myKeyStoreHash['scope'] + ' -keyStoreName ' + keyStoreName ]).split(lineSeparator):
           if personalCert != "":
             personalCert = personalCert.replace("[[", "").replace("] ]", "");
             # generate empty certificate dictionary
@@ -1243,6 +1381,25 @@ def get_appServerProperties(serverID, serverName):
   dataOut({'name': "propogatedOrBMTTranLifetimeTimeout", 'value': cybcon_was.showAttribute(trsvID, 'propogatedOrBMTTranLifetimeTimeout'), 'unit': "seconds", 'description': "Maximum transaction timeout", 'tagname': "propogatedOrBMTTranLifetimeTimeout"});
   dataOut({'tagname': "transactionservice", 'tagtype': "2"});
 
+  dataOut({'description': "Dynamic Cache Service", 'tagname': "dynamiccacheservice", 'tagtype': "1"});
+  dynaChacheID=AdminConfig.list('DynamicCache', serverID);
+  dataOut({'name': "enable", 'value': cybcon_was.showAttribute(dynaChacheID, 'enable'), 'description': "Enable service at server startup", 'tagname': "enable"});
+  dataOut({'name': "cacheSize", 'value': cybcon_was.showAttribute(dynaChacheID, 'cacheSize'), 'unit': "entries", 'description': "Cache size", 'tagname': "cacheSize"});
+  dataOut({'name': "defaultPriority", 'value': cybcon_was.showAttribute(dynaChacheID, 'defaultPriority'), 'description': "Default priority", 'tagname': "defaultPriority"});
+  dataOut({'name': "enableDiskOffload", 'value': cybcon_was.showAttribute(dynaChacheID, 'enableDiskOffload'), 'description': "Enable disk offload", 'tagname': "enableDiskOffload"});
+  dataOut({'name': "enableCacheReplication", 'value': cybcon_was.showAttribute(dynaChacheID, 'enableCacheReplication'), 'description': "Enable cache replication", 'tagname': "enableCacheReplication"});
+  dataOut({'name': "replicationType", 'value': cybcon_was.showAttribute(dynaChacheID, 'replicationType'), 'description': "Replication type", 'tagname': "replicationType"});
+  dataOut({'name': "pushFrequency", 'value': cybcon_was.showAttribute(dynaChacheID, 'pushFrequency'), 'description': "Push frequency", 'tagname': "pushFrequency"});
+  dataOut({'description': "External cache groups", 'tagname': "externalcachegroups", 'tagtype': "1"});
+  extCacheGroupID="";
+  for extCacheGroupID in cybcon_was.splitArray(cybcon_was.showAttribute(dynaChacheID, 'cacheGroups')):
+    dataOut({'tagname': "externalcachegroup", 'tagtype': "1"});
+    dataOut({'name': "name", 'value': cybcon_was.showAttribute(extCacheGroupID, 'name'), 'description': "Name", 'tagname': "name"});
+    dataOut({'name': "type", 'value': cybcon_was.showAttribute(extCacheGroupID, 'type'), 'description': "Type", 'tagname': "type"});
+    dataOut({'tagname': "externalcachegroup", 'tagtype': "2"});
+  dataOut({'tagname': "externalcachegroups", 'tagtype': "2"});
+  dataOut({'tagname': "dynamiccacheservice", 'tagtype': "2"});
+
   dataOut({'description': "ORB Service", 'tagname': "orbservice", 'tagtype': "1"});
   orbID = AdminConfig.list('ObjectRequestBroker', serverID);
   dataOut({'name': "requestTimeout", 'value': cybcon_was.showAttribute(orbID, 'requestTimeout'), 'unit': "seconds", 'description': "Request timeout", 'tagname': "requestTimeout"});
@@ -1354,10 +1511,16 @@ def get_JVMPropertiesFromServer(serverID):
   jvmID = AdminConfig.list('JavaVirtualMachine', AdminConfig.list('JavaProcessDef', serverID));
   dataOut({'name': "classpath", 'value': cybcon_was.showAttribute(jvmID, 'classpath'), 'description': "Classpath", 'tagname': "classpath"});
   dataOut({'name': "bootClasspath", 'value': cybcon_was.showAttribute(jvmID, 'bootClasspath'), 'description': "Boot Classpath", 'tagname': "bootClasspath"});
+  dataOut({'name': "verboseModeClass", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeClass'), 'description': "Verbose class loading", 'tagname': "verboseModeClass"});
   dataOut({'name': "verboseModeGarbageCollection", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeGarbageCollection'), 'description': "Verbose Garbage Collection", 'tagname': "verboseModeGarbageCollection"});
+  dataOut({'name': "verboseModeJNI", 'value': cybcon_was.showAttribute(jvmID, 'verboseModeJNI'), 'description': "Verbose JNI", 'tagname': "verboseModeJNI"});
   dataOut({'name': "initialHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'initialHeapSize'), 'description': "Initial Heap Size", 'tagname': "initialHeapSize"});
   dataOut({'name': "maximumHeapSize", 'value': cybcon_was.showAttribute(jvmID, 'maximumHeapSize'), 'description': "Maximum Heap Size", 'tagname': "maximumHeapSize"});
+  dataOut({'name': "runHProf", 'value': cybcon_was.showAttribute(jvmID, 'runHProf'), 'description': "Run HProf", 'tagname': "runHProf"});
+  dataOut({'name': "debugMode", 'value': cybcon_was.showAttribute(jvmID, 'debugMode'), 'description': "Debug Mode", 'tagname': "debugMode"});
+  dataOut({'name': "debugArgs", 'value': cybcon_was.showAttribute(jvmID, 'debugArgs'), 'description': "Debug arguments", 'tagname': "debugArgs"});
   dataOut({'name': "genericJvmArguments", 'value': cybcon_was.showAttribute(jvmID, 'genericJvmArguments'), 'description': "Generic JVM arguments", 'tagname': "genericJvmArguments"});
+  dataOut({'name': "disableJIT", 'value': cybcon_was.showAttribute(jvmID, 'disableJIT'), 'description': "Disable JIT", 'tagname': "disableJIT"});
   dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
   CusProp="";
   for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(jvmID, 'systemProperties')):
