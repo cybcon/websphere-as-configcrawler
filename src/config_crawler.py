@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 49 $
-#  $LastChangedDate: 2014-12-29 13:50:21 +0100 (Mon, 29 Dec 2014) $
+#  $Revision: 51 $
+#  $LastChangedDate: 2015-03-16 14:38:51 +0100 (Mon, 16 Mar 2015) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 49 2014-12-29 12:50:21Z cybcon89 $
+#  $Id: config_crawler.py 51 2015-03-16 13:38:51Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.620";
+VERSION="0.621";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -1874,7 +1874,8 @@ def get_endPointPortsFromServer(serverEntry):
 def get_DCSTransportsFromServer(serverID):
   dataOut({'description': "Distribution and Consistency Services (DCS) messages", 'tagname': "dcsmessages", 'tagtype': "1"});
 
-  for tcsID in cybcon_was.splitArray(AdminConfig.list("TransportChannelService", serverID)):
+  #for tcsID in cybcon_was.splitArray(AdminConfig.list("TransportChannelService", serverID)):
+  for tcsID in AdminConfig.list("TransportChannelService", serverID).split(lineSeparator):
     dataOut({'tagname': "TransportChannelService", 'tagtype': "1"});
     dataOut({'tagname': "chains", 'tagtype': "1"});
     for chainID in cybcon_was.splitArray(cybcon_was.showAttribute(tcsID, 'chains')):
