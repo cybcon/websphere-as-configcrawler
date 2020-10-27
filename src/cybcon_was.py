@@ -30,17 +30,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 53 $
-#  $LastChangedDate: 2015-11-19 17:16:48 +0100 (Thu, 19 Nov 2015) $
+#  $Revision: 61 $
+#  $LastChangedDate: 2016-02-25 19:25:39 +0100 (Thu, 25 Feb 2016) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: cybcon_was.py 53 2015-11-19 16:16:48Z cybcon89 $
+#  $Id: cybcon_was.py 61 2016-02-25 18:25:39Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
-cybcon_was_lib_version="1.032";                       # version of this library
+cybcon_was_lib_version="1.033";                       # version of this library
 
 # import standard modules
 import time;                                          # module for date and time
@@ -488,7 +488,7 @@ def identify_serverOrClusterByName(objectName):
       # get the server name
       serverName = showAttribute(myServer, 'name');
       # append server name to array if it is not empty
-      if serverName != "": clusterlist.append(serverName);
+      if serverName != "": serverlist.append(serverName);
 
   # The AdminConfig.list("Server") will do something in the cache a modification
   # when a webserver is in the list. This will not happen regulary. But to prevent
