@@ -27,20 +27,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-################################################################################
 #---------------------------------------------------------------------
-#  $Revision: 12 $
-#  $LastChangedDate: 2014-03-17 16:36:59 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 14 $
+#  $LastChangedDate: 2014-03-17 16:37:52 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 12 2014-03-17 15:36:59Z cybcon89 $
-#---------------------------------------------------------------------
+#  $Id: config_crawler.py 14 2014-03-17 15:37:52Z cybcon89 $
+################################################################################
 
 #----------------------------------------------------------------------------
 # Definition of global variables
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.555";
+VERSION="0.560";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -119,7 +118,7 @@ def get_configuration(configfile):
   configAttributes['services'] = ['serviceProviders', 'policySets'];
   configAttributes['cell'] = ['CoreGroup', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Security', 'Virtual_hosts', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings', 'CORBANamingService', 'SIBus'];
   configAttributes['cluster'] = ['clusterMembers', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries'];
-  configAttributes['application'] = ['targetMapping', 'runState', 'binaries', 'classLoader', 'sharedLibRef'];
+  configAttributes['application'] = ['targetMapping', 'runState', 'startupBehavior', 'binaries', 'classLoader', 'requestDispatcher', 'sharedLibRef', 'sessionManagement', 'jSPAndJSFoptions'];
   configAttributes['node'] = ['WAS_version', 'OS_name', 'hostname', 'JMS_provider', 'JDBC_provider', 'ResourceAdapter', 'AsyncBeans', 'CacheInstances', 'Mail_provider', 'URL_provider', 'ResourceEnv', 'Websphere_variables', 'Shared_libraries', 'NameSpaceBindings'];
   configAttributes['dmgr'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Logging'];
   configAttributes['nodeagent'] = ['JVM_properties', 'EndPointPorts', 'DCSTransports', 'HAManagerService', 'Sync_service', 'Logging'];
@@ -2223,60 +2222,66 @@ def get_clusterMembers(clusterID):
   dataOut({'tagname': "clustermembers", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
-# get_enterpriseApplicationBinaries
-#   description: output information about the applications binaries
-#   input: string appName, string appID
+# get_enterpriseApplicationStartupBehavior
+#   description: output information about the applications startup behavior
+#   input: id deplObjectID
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
-def get_enterpriseApplicationBinaries(appName, appID):
-  # set default values
-  appLocation = "";
-  appBinaryConf = "";
-  appBinaryDist = "";
-  appBuildID = "";
+def get_enterpriseApplicationStartupBehavior(deplObjectID):
+  dataOut({'tagname': 'startupBehavior', 'description': "Startup behavior", 'tagtype': "1"});
+  dataOut({'name': 'startingWeight', 'value': cybcon_was.showAttribute(deplObjectID, 'startingWeight'), 'description': 'Startup order', 'tagname': 'startingWeight'});
+  dataOut({'name': 'backgroundApplication', 'value': cybcon_was.showAttribute(deplObjectID, 'backgroundApplication'), 'description': 'Launch application before server completes startup', 'tagname': 'backgroundApplication'});
+  dataOut({'name': 'createMBeansForResources', 'value': cybcon_was.showAttribute(deplObjectID, 'createMBeansForResources'), 'description': 'Create MBeans for resources', 'tagname': 'createMBeansForResources'});
+  dataOut({'tagname': 'startupBehavior', 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationBinaries
+#   description: output information about the applications binaries
+#   input: string appName, id deplObjectID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationBinaries(appName, deplObjectID):
+  dataOut({'tagname': "appbinaries", 'description': "Application binaries", 'tagtype': "1"});
 
   # read some applications data from AdminApp.view
+  # set default value
+  appLocation = "";
+  appBuildID = "";
   for appConfig in AdminApp.view(appName).split(lineSeparator):
-    if appConfig.find("Directory to install application") != -1:
-      appLocation = appConfig.replace("Directory to install application", "").replace(":", "").strip();
-      continue;
-    if appConfig.find("Use Binary Configuration") != -1:
-      appBinaryConf = appConfig.replace("Use Binary Configuration", "").replace(":", "").strip();
-      continue;
-    if appConfig.find("Distribute application") != -1:
-      appBinaryDist = appConfig.replace("Distribute application", "").replace(":", "").strip();
-      continue;
     if appConfig.find("Application Build ID") != -1:
       appBuildID = appConfig.replace("Application Build ID", "").replace(":", "").strip();
       continue;
+    if appConfig.find("Directory to install application") != -1:
+      appLocation = appConfig.replace("Directory to install application", "").replace(":", "").strip();
+      continue;
 
   # output data
-  dataOut({'tagname': "appbinaries", 'description': "Application binaries", 'tagtype': "1"});
   dataOut({'name': "installedeardestination", 'value': appLocation, 'description': "Location (full path)", 'tagname': "installedeardestination"});
-  dataOut({'name': "binariesURL", 'value': cybcon_was.showAttribute(appID, 'binariesURL'), 'description': "Location (binariesURL)", 'tagname': "binariesURL"});
-  dataOut({'name': "appConfigInBinary", 'value': appBinaryConf, 'description': "Use configuration information in binary", 'tagname': "appConfigInBinary"});
-  dataOut({'name': "distributeApp", 'value': appBinaryDist, 'description': "Enable binary distribution, expansion and cleanup post uninstallation", 'tagname': "distributeApp"});
-  dataOut({'name': "filepermission", 'value': cybcon_was.showAttribute(appID, 'filePermission'), 'description': "File permissions", 'tagname': "filepermission"});
+  dataOut({'name': "binariesURL", 'value': cybcon_was.showAttribute(deplObjectID, 'binariesURL'), 'description': "Location (binariesURL)", 'tagname': "binariesURL"});
+  dataOut({'name': "useMetadataFromBinaries", 'value': cybcon_was.showAttribute(deplObjectID, 'useMetadataFromBinaries'), 'description': "Use configuration information in binary", 'tagname': "useMetadataFromBinaries"});
+  dataOut({'name': "enableDistribution", 'value': cybcon_was.showAttribute(deplObjectID, 'enableDistribution'), 'description': "Enable binary distribution, expansion and cleanup post uninstallation", 'tagname': "enableDistribution"});
+  dataOut({'name': "filepermission", 'value': cybcon_was.showAttribute(deplObjectID, 'filePermission'), 'description': "File permissions", 'tagname': "filepermission"});
   dataOut({'name': "buildversion", 'value': appBuildID, 'description': "Application build level", 'tagname': "buildversion"});
   dataOut({'tagname': "appbinaries", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
 # get_enterpriseApplicationClassloading
 #   description: output information about the applications classloaders
-#   input: string appID
+#   input: id deplObjectID
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
-def get_enterpriseApplicationClassloading(appID):
+def get_enterpriseApplicationClassloading(deplObjectID):
 
   dataOut({'tagname': "appclassloaders", 'description': "Class loading and update detection", 'tagtype': "1"});
 
-  dataOut({'name': "reloadEnabled", 'value': cybcon_was.showAttribute(appID, 'reloadEnabled'), 'description': "Reload classes when application files are updated", 'tagname': "reloadEnabled"});
-  dataOut({'name': "reloadInterval", 'value': cybcon_was.showAttribute(appID, 'reloadInterval'), 'unit': "seconds", 'description': "Polling interval for updated files", 'tagname': "reloadInterval"});
+  dataOut({'name': "reloadEnabled", 'value': cybcon_was.showAttribute(deplObjectID, 'reloadEnabled'), 'description': "Reload classes when application files are updated", 'tagname': "reloadEnabled"});
+  dataOut({'name': "reloadInterval", 'value': cybcon_was.showAttribute(deplObjectID, 'reloadInterval'), 'unit': "seconds", 'description': "Polling interval for updated files", 'tagname': "reloadInterval"});
 
   dataOut({'tagname': "classloader", 'tagtype': "1"});
-  classLoaderID = cybcon_was.showAttribute(appID, 'classloader');
+  classLoaderID = cybcon_was.showAttribute(deplObjectID, 'classloader');
   if classLoaderID != -1:
     dataOut({'name': "mode", 'value': cybcon_was.showAttribute(classLoaderID, 'mode'), 'description': "Class loader order", 'tagname': "mode"});
   else:
@@ -2284,24 +2289,38 @@ def get_enterpriseApplicationClassloading(appID):
   dataOut({'tagname': "classloader", 'tagtype': "2"});
 
   dataOut({'tagname': "warclassloader", 'tagtype': "1"});
-  dataOut({'name': "warClassLoaderPolicy", 'value': cybcon_was.showAttribute(appID, 'warClassLoaderPolicy'), 'description': "WAR class loader policy", 'tagname': "warClassLoaderPolicy"});
+  dataOut({'name': "warClassLoaderPolicy", 'value': cybcon_was.showAttribute(deplObjectID, 'warClassLoaderPolicy'), 'description': "WAR class loader policy", 'tagname': "warClassLoaderPolicy"});
   dataOut({'tagname': "warclassloader", 'tagtype': "2"});
   
   dataOut({'tagname': "appclassloaders", 'tagtype': "2"});
 
 #----------------------------------------------------------------------------
-# get_enterpriseApplicationLibraryReferences
-#   description: output information about the applications shared libs
-#   input: string appID
+# get_enterpriseApplicationRequestDispatcher
+#   description: output information about the applications request dispatcher
+#   input: id deplObjectID
 #   output: informations on stdout
 #   return: -
 #----------------------------------------------------------------------------
-def get_enterpriseApplicationLibraryReferences(appID):
+def get_enterpriseApplicationRequestDispatcher(deplObjectID):
+  dataOut({'tagname': 'requestDispatcher', 'description': 'Request dispatcher properties', 'tagtype': '1'});
+  dataOut({'name': 'allowDispatchRemoteInclude', 'value': cybcon_was.showAttribute(deplObjectID, 'allowDispatchRemoteInclude'), 'description': 'Allow dispatching includes to remote resources', 'tagname': 'allowDispatchRemoteInclude'});
+  dataOut({'name': 'allowServiceRemoteInclude', 'value': cybcon_was.showAttribute(deplObjectID, 'allowServiceRemoteInclude'), 'description': 'Allow servicing includes from remote resources', 'tagname': 'allowServiceRemoteInclude'});
+  dataOut({'name': 'asyncRequestDispatchType', 'value': cybcon_was.showAttribute(deplObjectID, 'asyncRequestDispatchType'), 'description': 'Asynchronous request dispatching type', 'tagname': 'asyncRequestDispatchType'});
+  dataOut({'tagname': 'requestDispatcher', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationLibraryReferences
+#   description: output information about the applications shared libs
+#   input: id deplObjectID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationLibraryReferences(deplObjectID):
 
   dataOut({'tagname': "sharedlibref", 'description': "Shared library references", 'tagtype': "1"});
 
   dataOut({'tagname': "appsharedlibref", 'description': "Application", 'tagtype': "1"});
-  classLoaderID = cybcon_was.showAttribute(appID, 'classloader');
+  classLoaderID = cybcon_was.showAttribute(deplObjectID, 'classloader');
   if classLoaderID != -1:
     appSharedLibraryID = "";
     for appSharedLibraryID in cybcon_was.splitArray(cybcon_was.showAttribute(classLoaderID, 'libraries')):
@@ -2314,7 +2333,7 @@ def get_enterpriseApplicationLibraryReferences(appID):
 
   dataOut({'tagname': "webmodules", 'description': "Module(s)", 'tagtype': "1"});
   webModExist = "false";
-  for webModuleID in cybcon_was.splitArray(cybcon_was.showAttribute(appID, 'modules')):
+  for webModuleID in cybcon_was.splitArray(cybcon_was.showAttribute(deplObjectID, 'modules')):
     uri = cybcon_was.showAttribute(webModuleID, 'uri');
     # check for webarchive - skip jar files
     if uri.find(".war") != -1:
@@ -2338,6 +2357,140 @@ def get_enterpriseApplicationLibraryReferences(appID):
   dataOut({'tagname': "webmodules", 'tagtype': "2"});
     
   dataOut({'tagname': "sharedlibref", 'tagtype': "2"});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationSessionManagement
+#   description: output information about the applications session management
+#   input: id deplObjectID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationSessionManagement(deplObjectID):
+  dataOut({'tagname': 'sessionManagement', 'description': 'Session management', 'tagtype': '1'});
+
+  deplObjectConfigID=cybcon_was.splitArray(cybcon_was.showAttribute(deplObjectID, 'configs'));
+  if len(deplObjectConfigID) == 0:
+    deplObjectConfigID = "";
+  else:
+    deplObjectConfigID=deplObjectConfigID[0];
+  
+  if deplObjectConfigID != "":
+    sessionManagementID=cybcon_was.showAttribute(deplObjectConfigID, 'sessionManagement');
+    if sessionManagementID != "":
+      dataOut({'name': 'Overridesessionmanagement', 'value': 'true', 'description': "Override session management", 'tagname': 'Overridesessionmanagement'});
+      dataOut({'name': 'enableSSLTracking', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableSSLTracking'), 'description': 'Enable SSL ID tracking', 'tagname': 'enableSSLTracking'});
+      dataOut({'name': 'enableCookies', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableCookies'), 'description': 'Enable cookies', 'tagname': 'enableCookies'});
+      defaultCookieSettingsID = cybcon_was.showAttribute(sessionManagementID, 'defaultCookieSettings');
+      if defaultCookieSettingsID != "":
+        dataOut({'tagname': 'defaultCookieSettings', 'description': 'cookie', 'tagtype': '1'});
+        dataOut({'name': 'name', 'value': cybcon_was.showAttribute(defaultCookieSettingsID, 'name'), 'description': 'Cookie name', 'tagname': 'name'});
+        dataOut({'name': 'secure', 'value': cybcon_was.showAttribute(defaultCookieSettingsID, 'secure'), 'description': 'Restrict cookies to HTTPS sessions', 'tagname': 'secure'});
+        dataOut({'name': 'httpOnly', 'value': cybcon_was.showAttribute(defaultCookieSettingsID, 'httpOnly'), 'description': 'Set session cookies to HTTPOnly to help prevent cross-site scripting attacks', 'tagname': 'httpOnly'});
+        dataOut({'name': 'domain', 'value': cybcon_was.showAttribute(defaultCookieSettingsID, 'domain'), 'description': 'Cookie domain', 'tagname': 'domain'});
+        maximumAge=cybcon_was.showAttribute(defaultCookieSettingsID, 'maximumAge');
+        if maximumAge == "-1":
+          dataOut({'name': 'cookieMaximumAge', 'value': 'Current browser session', 'description': 'cookieMaximumAge', 'tagname': 'cookieMaximumAge'});
+        else:
+          dataOut({'name': 'cookieMaximumAge', 'value': maximumAge, 'unit': 'seconds', 'description': 'cookieMaximumAge', 'tagname': 'cookieMaximumAge'});
+        
+        dataOut({'name': 'useContextRootAsPath', 'value': cybcon_was.showAttribute(defaultCookieSettingsID, 'useContextRootAsPath'), 'description': 'Use the context root', 'tagname': 'useContextRootAsPath'});
+        dataOut({'name': 'path', 'value': cybcon_was.showAttribute(defaultCookieSettingsID, 'path'), 'description': 'Set cookie path', 'tagname': 'path'});
+        dataOut({'tagname': 'defaultCookieSettings', 'tagtype': '2'});
+
+      dataOut({'name': 'enableUrlRewriting', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableUrlRewriting'), 'description': 'Enable URL rewriting', 'tagname': 'enableUrlRewriting'});
+      dataOut({'name': 'enableProtocolSwitchRewriting', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableProtocolSwitchRewriting'), 'description': 'Enable protocol switch rewriting', 'tagname': 'enableProtocolSwitchRewriting'});
+
+      tuningParamsID = cybcon_was.showAttribute(sessionManagementID, 'tuningParams');
+      if tuningParamsID != "":
+        dataOut({'name': 'maxInMemorySessionCount', 'value': cybcon_was.showAttribute(tuningParamsID, 'maxInMemorySessionCount'), 'unit': 'sessions', 'description': 'Maximum in-memory session count', 'tagname': 'maxInMemorySessionCount'});
+        dataOut({'name': 'allowOverflow', 'value': cybcon_was.showAttribute(tuningParamsID, 'allowOverflow'), 'description': 'Allow overflow', 'tagname': 'allowOverflow'});
+        dataOut({'name': 'invalidationTimeout', 'value': cybcon_was.showAttribute(tuningParamsID, 'invalidationTimeout'), 'unit': 'minutes', 'description': 'Session timeout', 'tagname': 'invalidationTimeout'});
+
+      dataOut({'name': 'enableSecurityIntegration', 'value': cybcon_was.showAttribute(sessionManagementID, 'enableSecurityIntegration'), 'description': 'Security integration', 'tagname': 'enableSecurityIntegration'});
+      dataOut({'name': 'allowSerializedSessionAccess', 'value': cybcon_was.showAttribute(sessionManagementID, 'allowSerializedSessionAccess'), 'description': 'Allow serial access', 'tagname': 'allowSerializedSessionAccess'});
+      dataOut({'name': 'maxWaitTime', 'value': cybcon_was.showAttribute(sessionManagementID, 'maxWaitTime'), 'unit': 'seconds', 'description': 'Maximum wait time', 'tagname': 'maxWaitTime'});
+      dataOut({'name': 'accessSessionOnTimeout', 'value': cybcon_was.showAttribute(sessionManagementID, 'accessSessionOnTimeout'), 'description': 'Allow access on timeout', 'tagname': 'accessSessionOnTimeout'});
+      
+    else:
+      dataOut({'name': 'Overridesessionmanagement', 'value': 'false', 'description': "Override session management", 'tagname': 'Overridesessionmanagement'});
+  else:
+    dataOut({'name': 'Overridesessionmanagement', 'value': 'false', 'description': "Override session management", 'tagname': 'Overridesessionmanagement'});
+    
+  dataOut({'tagname': 'sessionManagement', 'tagtype': '2'});
+
+#----------------------------------------------------------------------------
+# get_enterpriseApplicationJSPandJSFoptions
+#   description: output information about the applications JSF and JSP options
+#   input: string applicationName, id deplObjectID
+#   output: informations on stdout
+#   return: -
+#----------------------------------------------------------------------------
+def get_enterpriseApplicationJSPandJSFoptions(appName, deplObjectID):
+  dataOut({'tagname': 'jSPAndJSFoptions', 'description': 'JSP and JSF options', 'tagtype': '1'});
+
+  # parse webmodule informations from AdminApp.view()
+  webModules=[];
+  innerWebModule='false';
+  webModule={};
+  webModule['module']="";
+  webModule['URI']="";
+  webModule['reload']="";
+  webModule['interval']="";
+  wm_name="";
+  wm_name_last="";
+  try:
+    for appConfig in AdminApp.view(appName, '[ -JSPReloadForWebMod ]').split(lineSeparator):
+      if appConfig.find("Web module:") != -1:
+        wm_name = appConfig.replace("Web module:", "").strip();
+        if wm_name != wm_name_last:
+          if webModule['module'] != "":
+            webModules.append(webModule);
+            webModule={};
+            webModule['module']="";
+            webModule['URI']="";
+            webModule['reload']="";
+            webModule['interval']="";
+          webModule['module'] = wm_name;
+          wm_name_last = wm_name;
+        continue;
+      elif appConfig.find("URI:") != -1:
+        uri = appConfig.replace("URI:", "").strip();
+        if wm_name != "":
+          webModule['URI'] = uri;
+        continue;
+      elif appConfig.find("JSP enable class reloading:") != -1:
+        reload = appConfig.replace("JSP enable class reloading:", "").strip();
+        if wm_name != "":
+          webModule['reload'] = reload;
+        continue;
+      elif appConfig.find("JSP reload interval in seconds:") != -1:
+        interval = appConfig.replace("JSP reload interval in seconds:", "").strip();
+        if wm_name != "":
+          webModule['interval'] = interval;
+        continue;
+    if webModule['module'] != "": webModules.append(webModule);
+
+    # loop over webmodules
+    dataOut({'tagname': 'webmodules', 'description': 'JSP reloading options for Web modules', 'tagtype': '1'});
+    for webModule in webModules:
+      dataOut({'tagname': 'webmodule', 'tagtype': '1'});
+      dataOut({'name': 'webmodule', 'value': webModule['module'], 'description': "Web module", 'tagname': 'webmodule'});
+      dataOut({'name': 'URI', 'value': webModule['URI'], 'description': "URI", 'tagname': 'URI'});
+      dataOut({'name': 'jspenableclassreloading', 'value': webModule['reload'], 'description': "JSP enable class reloading", 'tagname': 'jspenableclassreloading'});
+      dataOut({'name': 'jspreloadintervalinseconds', 'value': webModule['interval'], 'unit': 'seconds', 'description': 'JSP reload interval in seconds', 'tagname': 'jspreloadintervalinseconds'});
+      dataOut({'tagname': 'webmodule', 'tagtype': '2'});
+    dataOut({'tagname': 'webmodules', 'tagtype': '2'});
+  except:
+    dataOut({'description': 'WARNING', 'value': 'The Server not supports taskname JSPReloadForWebMod in AdminApp.view', 'tagname': 'WARNING'});
+
+  try:
+    JSFimplementation = AdminTask.listJSFImplementation(appName);
+    dataOut({'name': 'JSFimplementation', 'value': JSFimplementation, 'description': "Select a JSF implementation that the container will use for this application", 'tagname': 'JSFimplementation'});
+  except:
+    dataOut({'description': 'WARNING', 'value': 'The Server not supports AdminTask.listJSFImplementation().', 'tagname': 'WARNING'});
+
+  dataOut({'tagname': 'jSPAndJSFoptions', 'tagtype': '2'});
+
 
 #----------------------------------------------------------------------------
 # get_enterpriseApplicationTargetAndState
@@ -2727,13 +2880,18 @@ if CONFIG['general']['application'] == "true":
   dataOut({'tagname': "applications", 'description': "Applications", 'tagtype': "1"});
   dataOut({'tagname': "enterpriseapplications", 'description': "Enterprise Applications", 'tagtype': "1"});
   for appName in cybcon_was.get_applications():
-    appID = cybcon_was.get_applicationIDByName(appName);
+    appID = AdminConfig.getid('/Deployment:' + appName + '/');
+    deplObjectID = cybcon_was.showAttribute(appID, 'deployedObject');
     dataOut({'name': "appname", 'value': appName, 'description': "Application name", 'tagname': "appname", 'tagtype': "1"});
     if CONFIG['application']['targetMapping'] == "true" or CONFIG['application']['runState'] == "true":
       get_enterpriseApplicationTargetAndState(appName, CONFIG['application']['targetMapping'], CONFIG['application']['runState']);
-    if CONFIG['application']['binaries'] == "true": get_enterpriseApplicationBinaries(appName, appID);
-    if CONFIG['application']['classLoader'] == "true": get_enterpriseApplicationClassloading(appID);
-    if CONFIG['application']['sharedLibRef'] == "true": get_enterpriseApplicationLibraryReferences(appID);
+    if CONFIG['application']['startupBehavior'] == "true": get_enterpriseApplicationStartupBehavior(deplObjectID);
+    if CONFIG['application']['binaries'] == "true": get_enterpriseApplicationBinaries(appName, deplObjectID);
+    if CONFIG['application']['classLoader'] == "true": get_enterpriseApplicationClassloading(deplObjectID);
+    if CONFIG['application']['requestDispatcher'] == "true": get_enterpriseApplicationRequestDispatcher(deplObjectID);
+    if CONFIG['application']['sharedLibRef'] == "true": get_enterpriseApplicationLibraryReferences(deplObjectID);
+    if CONFIG['application']['sessionManagement'] == "true": get_enterpriseApplicationSessionManagement(deplObjectID);
+    if CONFIG['application']['jSPAndJSFoptions'] == "true": get_enterpriseApplicationJSPandJSFoptions(appName, deplObjectID);
     dataOut({'tagname': "appname", 'tagtype': "2"});
   dataOut({'tagname': "enterpriseapplications", 'tagtype': "2"});
   dataOut({'tagname': "applications", 'tagtype': "2"});
