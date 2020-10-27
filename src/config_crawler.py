@@ -29,10 +29,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 56 $
-#  $LastChangedDate: 2015-12-08 22:14:15 +0100 (Tue, 08 Dec 2015) $
+#  $Revision: 59 $
+#  $LastChangedDate: 2015-12-10 08:04:42 +0100 (Thu, 10 Dec 2015) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 56 2015-12-08 21:14:15Z cybcon89 $
+#  $Id: config_crawler.py 59 2015-12-10 07:04:42Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.640";
+VERSION="0.642";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -3628,7 +3628,11 @@ def get_UsersAndGroups(cellID):
   # get additional users and their roles
   dataOut({'tagname': 'UserExt', 'tagtype': '1'});
   rolesHash={};
-  ExtUserRoles=AdminTask.listUserIDsOfAuthorizationGroup().replace("{", "").replace("}", "").strip().split("], ");
+  ExtUserRoles=''
+  try: ExtUserRoles=AdminTask.listUserIDsOfAuthorizationGroup().replace("{", "").replace("}", "").strip().split("], ");
+  except:
+    dataOut({'description': "WARNING", 'value': 'Access denied to list UserIDs'});
+    pass;
   for ExtUserRole in ExtUserRoles:
     ExtUserRole=ExtUserRole.replace("[", "").replace("]", "").strip();
     role, userlist = ExtUserRole.split("=", 1);
@@ -3679,6 +3683,7 @@ def get_Schedulers(objectID):
   schedulerProviderID = AdminConfig.getid('/' + objectType + ':' + objectName + '/SchedulerProvider:SchedulerProvider/');
   if schedulerProviderID != '':
     dataOut({'tagname': 'SchedulerConfigurations', 'tagtype': '1'});
+    schedulerID = '';
     for schedulerID in AdminConfig.list('SchedulerConfiguration', schedulerProviderID).split(lineSeparator):
       if schedulerID == '': continue;
       dataOut({'tagname': 'SchedulerConfiguration', 'tagtype': '1'});
@@ -3691,6 +3696,8 @@ def get_Schedulers(objectID):
       dataOut({'name': 'workManagerInfoJNDIName', 'value': cybcon_was.showAttribute(schedulerID, 'workManagerInfoJNDIName'), 'description': 'Work manager JNDI name', 'tagname': 'workManagerInfoJNDIName'});
       dataOut({'name': 'useAdminRoles', 'value': cybcon_was.showAttribute(schedulerID, 'useAdminRoles'), 'description': 'Use administration roles', 'tagname': 'useAdminRoles'});
       dataOut({'tagname': 'SchedulerConfiguration', 'tagtype': '2'});
+    if schedulerID == '':
+      dataOut({'value': "No scheduler configuration found on this scope"});
     dataOut({'tagname': 'SchedulerConfigurations', 'tagtype': '2'});
   else:
     dataOut({'value': "No scheduler provider found on this scope"});
