@@ -28,10 +28,10 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 #---------------------------------------------------------------------
-#  $Revision: 20 $
-#  $LastChangedDate: 2014-03-17 16:43:09 +0100 (Mon, 17 Mar 2014) $
+#  $Revision: 22 $
+#  $LastChangedDate: 2014-03-17 16:43:41 +0100 (Mon, 17 Mar 2014) $
 #  $LastChangedBy: cybcon89 $
-#  $Id: config_crawler.py 20 2014-03-17 15:43:09Z cybcon89 $
+#  $Id: config_crawler.py 22 2014-03-17 15:43:41Z cybcon89 $
 ################################################################################
 
 #----------------------------------------------------------------------------
@@ -39,7 +39,7 @@
 #----------------------------------------------------------------------------
 
 # version of this script
-VERSION="0.576";
+VERSION="0.578";
 
 # import standard modules
 import time;                                      # module for date and time
@@ -553,9 +553,32 @@ def get_JMSProviderProperties(objectID):
         dataOut({'tagname': "mqqueuedestination", 'tagtype': "1"});
         dataOut({'name': "name", 'value': cybcon_was.showAttribute(MQQDest, 'name'), 'description': "Name", 'tagname': "name"});
         dataOut({'name': "jndiName", 'value': cybcon_was.showAttribute(MQQDest, 'jndiName'), 'description': "JNDI name", 'tagname': "jndiname"});
-        dataOut({'name': "baseQueueName", 'value': cybcon_was.showAttribute(MQQDest, 'baseQueueName'), 'description': "Base queue name", 'tagname': "basequeuename"});
+        dataOut({'name': "baseQueueName", 'value': cybcon_was.showAttribute(MQQDest, 'baseQueueName'), 'description': "Queue name", 'tagname': "basequeuename"});
+        dataOut({'name': 'baseQueueManagerName', 'value': cybcon_was.showAttribute(MQQDest, 'baseQueueManagerName'), 'description': 'Queue manager or Queue sharing group name', 'tagname': 'baseQueueManagerName'});
+        dataOut({'description': 'Advanced properties', 'tagname': "advancedproperties", 'tagtype': "1"});
+        dataOut({'name': 'persistence', 'value': cybcon_was.showAttribute(MQQDest, 'persistence'), 'description': 'Persistence', 'tagname': 'persistence'});
+        dataOut({'name': 'priority', 'value': cybcon_was.showAttribute(MQQDest, 'priority'), 'description': 'Priority', 'tagname': 'priority'});
+        dataOut({'name': 'specifiedPriority', 'value': cybcon_was.showAttribute(MQQDest, 'specifiedPriority'), 'description': 'Specified priority', 'tagname': 'specifiedPriority'});
+        dataOut({'name': 'expiry', 'value': cybcon_was.showAttribute(MQQDest, 'expiry'), 'description': 'Expiry', 'tagname': 'expiry'});
+        dataOut({'name': 'specifiedExpiry', 'value': cybcon_was.showAttribute(MQQDest, 'specifiedExpiry'), 'description': 'Specified expiry', 'tagname': 'specifiedExpiry'});
+        dataOut({'name': 'CCSID', 'value': cybcon_was.showAttribute(MQQDest, 'CCSID'), 'description': 'Coded character set identifier (CCSID)', 'tagname': 'CCSID'});
+        dataOut({'name': 'useNativeEncoding', 'value': cybcon_was.showAttribute(MQQDest, 'useNativeEncoding'), 'description': 'Use native encoding', 'tagname': 'useNativeEncoding'});
+        dataOut({'name': 'integerEncoding', 'value': cybcon_was.showAttribute(MQQDest, 'integerEncoding'), 'description': 'Integer encoding', 'tagname': 'integerEncoding'});
+        dataOut({'name': 'decimalEncoding', 'value': cybcon_was.showAttribute(MQQDest, 'decimalEncoding'), 'description': 'Decimal encoding', 'tagname': 'decimalEncoding'});
+        dataOut({'name': 'floatingPointEncoding', 'value': cybcon_was.showAttribute(MQQDest, 'floatingPointEncoding'), 'description': 'Floating point encoding', 'tagname': 'floatingPointEncoding'});
+        #dataOut({'name': 'useRFH2', 'value': cybcon_was.showAttribute(MQQDest, 'useRFH2'), 'description': 'Append RFH version 2 headers to messages sent to this destination', 'tagname': 'useRFH2'});
+        dataOut({'name': 'targetClient', 'value': cybcon_was.showAttribute(MQQDest, 'targetClient'), 'description': 'Message body (Target client)', 'tagname': 'targetClient'});
+        dataOut({'name': 'replyToStyle', 'value': cybcon_was.showAttribute(MQQDest, 'replyToStyle'), 'description': 'Reply to style', 'tagname': 'replyToStyle'});
+        dataOut({'name': 'sendAsync', 'value': cybcon_was.showAttribute(MQQDest, 'sendAsync'), 'description': 'Asynchronously send messages to the queue manager', 'tagname': 'sendAsync'});
+        dataOut({'name': 'readAhead', 'value': cybcon_was.showAttribute(MQQDest, 'readAhead'), 'description': 'Read ahead, and cache, non-persistent messages for consumers', 'tagname': 'readAhead'});
+        dataOut({'name': 'readAheadClose', 'value': cybcon_was.showAttribute(MQQDest, 'readAheadClose'), 'description': 'Read ahead consumer close method', 'tagname': 'readAheadClose'});
+        dataOut({'name': 'mqmdReadEnabled', 'value': cybcon_was.showAttribute(MQQDest, 'mqmdReadEnabled'), 'description': 'MQMD read enabled', 'tagname': 'mqmdReadEnabled'});
+        dataOut({'name': 'mqmdWriteEnabled', 'value': cybcon_was.showAttribute(MQQDest, 'mqmdWriteEnabled'), 'description': 'MQMD write enabled', 'tagname': 'mqmdWriteEnabled'});
+        dataOut({'name': 'mqmdMessageContext', 'value': cybcon_was.showAttribute(MQQDest, 'mqmdMessageContext'), 'description': 'MQMD message context', 'tagname': 'mqmdMessageContext'});
+        dataOut({'tagname': "advancedproperties", 'tagtype': "2"});
+
         dataOut({'description': "WebSphere MQ Queue Connection Properties", 'tagname': "mqqueueconnectionproperties", 'tagtype': "1"});
-        #dataOut({'name': "queueManagerPort", 'value': cybcon_was.showAttribute(MQQDest, 'queueManagerPort'), 'description': "Queue manager port", 'tagname': "queueManagerPort"});
+        dataOut({'name': "queueManagerPort", 'value': cybcon_was.showAttribute(MQQDest, 'queueManagerPort'), 'description': "Queue manager port", 'tagname': "queueManagerPort"});
         dataOut({'name': "serverConnectionChannelName", 'value': cybcon_was.showAttribute(MQQDest, 'serverConnectionChannelName'), 'description': "Server connection channel name", 'tagname': "serverConnectionChannelName"});
         dataOut({'name': "userName", 'value': cybcon_was.showAttribute(MQQDest, 'userName'), 'description': "User ID", 'tagname': "userName"});
         dataOut({'tagname': "mqqueueconnectionproperties", 'tagtype': "2"});
@@ -914,14 +937,36 @@ def get_securityProperties(cellName):
   dataOut({'name': "appEnabled", 'value': cybcon_was.showAttribute(securityID, 'appEnabled'), 'description': "Enable application security", 'tagname': "appenabled"});
   dataOut({'name': "enforceJava2Security", 'value': cybcon_was.showAttribute(securityID, 'enforceJava2Security'), 'description': "Enable Java 2 security", 'tagname': "enforcejava2security"});
   dataOut({'name': "cacheTimeout", 'value': cybcon_was.showAttribute(securityID, 'cacheTimeout'), 'description': "Cache timeout", 'tagname': "cachetimeout"});
+  dataOut({'name': "useDomainQualifiedUserNames", 'value': cybcon_was.showAttribute(securityID, 'useDomainQualifiedUserNames'), 'description': "Use domain-qualified user names", 'tagname': "useDomainQualifiedUserNames"});
   dataOut({'tagname': "generalproperties", 'tagtype': "2"});
+  dataOut({'decription': 'Custom properties', 'tagname': "customproperties", 'tagtype': "1"});
+  CusProp="";
+  for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(securityID, 'properties')):
+    dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
+  if CusProp == "":
+    dataOut({'value': "No custom properties set."});
+  dataOut({'tagname': "customproperties", 'tagtype': "2"});
   dataOut({'tagname': "globalsecurity", 'tagtype': "2"});
 
   dataOut({'description': "User registries", 'tagname': "userregistries", 'tagtype': "1"});
   dataOut({'description': "Custom", 'tagname': "custom", 'tagtype': "1"});
+  cusUserRegID=AdminConfig.list('CustomUserRegistry', securityID);
+  dataOut({'name': 'primaryAdminId', 'value': cybcon_was.showAttribute(cusUserRegID, 'primaryAdminId'), 'description': 'Primary administrative user name', 'tagname': 'primaryAdminId'});
+  useRegistryServerId=cybcon_was.showAttribute(cusUserRegID, 'useRegistryServerId');
+  dataOut({'name': 'useRegistryServerId', 'value': useRegistryServerId, 'description': 'Use registry server ID', 'tagname': 'useRegistryServerId'});
+  if useRegistryServerId == 'true':
+    dataOut({'name': 'useRegistryServerIdSelect1', 'value': 'unset', 'description': 'Automatically generated server identity', 'tagname': 'useRegistryServerIdSelect1'});
+    dataOut({'name': 'useRegistryServerIdSelect2', 'value': 'set', 'description': 'Server identity that is stored in the repository', 'tagname': 'useRegistryServerIdSelect2'});
+    dataOut({'name': 'serverId', 'value': cybcon_was.showAttribute(cusUserRegID, 'serverId'), 'description': 'Server user ID or administrative user on a Version 6.0.x node', 'tagname': 'serverId'});
+    dataOut({'name': 'serverPassword', 'value': cybcon_was.showAttribute(cusUserRegID, 'serverPassword'), 'description': 'Password', 'tagname': 'serverPassword'});
+  else:
+    dataOut({'name': 'useRegistryServerIdSelect1', 'value': 'set', 'description': 'Automatically generated server identity', 'tagname': 'useRegistryServerIdSelect1'});
+    dataOut({'name': 'useRegistryServerIdSelect2', 'value': 'unset', 'description': 'Server identity that is stored in the repository', 'tagname': 'useRegistryServerIdSelect2'});
+  dataOut({'name': 'customRegistryClassName', 'value': cybcon_was.showAttribute(cusUserRegID, 'customRegistryClassName'), 'description': 'Custom registry class name', 'tagname': 'customRegistryClassName'});
+  dataOut({'name': 'ignoreCase', 'value': cybcon_was.showAttribute(cusUserRegID, 'ignoreCase'), 'description': 'Ignore case for authorization', 'tagname': 'ignoreCase'});
   dataOut({'description': "Custom properties", 'tagname': "customproperties", 'tagtype': "1"});
   CusProp="";
-  for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(AdminConfig.list('CustomUserRegistry', securityID), 'properties')):
+  for CusProp in cybcon_was.splitArray(cybcon_was.showAttribute(cusUserRegID, 'properties')):
     dataOut({'name': "customProperty", 'value': cybcon_was.showAttribute(CusProp, 'value'), 'description': cybcon_was.showAttribute(CusProp, 'name'), 'tagname': "property"});
   if CusProp == "":
     dataOut({'value': "No custom properties set."});
