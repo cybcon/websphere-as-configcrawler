@@ -32,10 +32,14 @@ Output can be set to XML (for easy computer based postprocessing) or as simple T
 ## Configuration file example
 ![configuration file](.readme/config_file.png)
 
+# Donate
+I would appreciate a small donation to support the further development of my open source projects.
+
+<a href="https://www.paypal.com/donate/?hosted_button_id=BHGJGGUS6RH44" target="_blank"><img src="https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png" alt="Donate with PayPal" width="200px"></a>
 
 # COPYRIGHT AND LICENSE
 
-(C) Copyright 2009-2020, Michael Oberdorf IT-Consulting <info@oberdorf-itc.de>
+(C) Copyright 2009-2023, Michael Oberdorf IT-Consulting <info@oberdorf-itc.de>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
